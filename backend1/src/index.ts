@@ -4,6 +4,8 @@ import pool from './config/db'; // To automatycznie wywoła nasz test połączen
 import authRoutes from './routes/authRoutes';
 import childrenRoutes from './routes/childrenRoutes';
 import institutionRoutes from './routes/institutionRoutes';
+import applicationRoutes from './routes/applicationRoutes';
+
 dotenv.config();
 
 const app = express();
@@ -14,6 +16,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/children', childrenRoutes);
 app.use('/api/institution', institutionRoutes);
+app.use('/api/application', applicationRoutes);
 
 app.get('/', (req, res) => {
   res.send('System rekrutacji EduEnroll działa pomyślnie!');
