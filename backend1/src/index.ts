@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import pool from './config/db'; // To automatycznie wywoła nasz test połączenia z bazą
 import authRoutes from './routes/authRoutes';
+import childrenRoutes from './routes/childrenRoutes';
 dotenv.config();
 
 const app = express();
@@ -10,8 +11,8 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
+app.use('/api/children', childrenRoutes);
 
-// Prosty testowy punkt dostępu (Endpoint)
 app.get('/', (req, res) => {
   res.send('System rekrutacji EduEnroll działa pomyślnie!');
 });
