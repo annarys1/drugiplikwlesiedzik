@@ -14,9 +14,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/children', childrenRoutes);
 app.use('/api/institution', institutionRoutes);
-app.post('/api/institution/test', (req, res) => {
-  res.send('Testowa trasa instytucji działa!');
-});
+
 app.get('/', (req, res) => {
   res.send('System rekrutacji EduEnroll działa pomyślnie!');
 });
