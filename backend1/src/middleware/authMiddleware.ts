@@ -11,7 +11,7 @@ export interface AuthenticatedRequest extends Request {
 
 export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[2]; 
+ const token = authHeader && authHeader.split(' ')[1];
 
 
   const directToken = token || authHeader;
