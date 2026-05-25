@@ -3,7 +3,7 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
-import jsxA11y from 'eslint-plugin-jsx-a11y' // 1. Importujemy wtyczkę WCAG
+import jsxA11y from 'eslint-plugin-jsx-a11y' // Importujemy wtyczkę WCAG
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
@@ -15,14 +15,14 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
-      jsxA11y.flatConfigs.recommended, // 2. Włączamy domyślne sprawdzanie WCAG
+      jsxA11y.flatConfigs.recommended, // Włączamy automatyczne sprawdzanie WCAG
     ],
     languageOptions: {
       globals: globals.browser,
     },
     rules: {
-      // 3. Dodatkowe, rygorystyczne reguły dostępności dla zespołu:
-      'jsx-a11y/alt-text': 'error',       // Każdy obrazek musi mieć opis dla czytników ekranu
+      // Dodatkowe, rygorystyczne reguły dostępności dla zespołu:
+      'jsx-a11y/alt-text': 'error',       // Każdy obrazek musi mieć opis dla czytników
       'jsx-a11y/aria-props': 'error',     // Atrybuty ARIA muszą być poprawne technicznie
       'jsx-a11y/aria-proptypes': 'error', // Wartości w atrybutach ARIA muszą mieć odpowiedni typ
     },
