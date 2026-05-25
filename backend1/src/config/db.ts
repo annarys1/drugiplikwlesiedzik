@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 // Ładowanie zmiennych z pliku .env
 dotenv.config();
 
-// Utworzenie puli połączeń
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || '3306'),
@@ -19,7 +19,7 @@ const pool = mysql.createPool({
 // Funkcja testująca połączenie
 async function testConnection() {
   try {
-    // MySQL używa NOW() do sprawdzenia czasu
+    
     const [rows]: any = await pool.query('SELECT NOW() as time, VERSION() as version');
     console.log('✅ Połączono z bazą danych MySQL/MariaDB!');
     console.log('Czas bazy:', rows[0].time);

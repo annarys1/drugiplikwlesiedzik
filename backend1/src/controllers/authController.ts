@@ -23,7 +23,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 👇 Używamy już poprawionej nazwy kolumny: surname
+    
     await db.query(
       'INSERT INTO user (email, password, name, surname, role) VALUES (?, ?, ?, ?, ?)',
       [email, hashedPassword, firstName, lastName, 'parents']
@@ -33,6 +33,36 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
   } catch (error: any) {
     console.error('Błąd rejestracji:', error.message);
     res.status(500).json({ message: 'Błąd serwera podczas rejestracji.' });
+  }
+};
+export const registerHeadmaster = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+
+    if (!email || !password || !firstName || !lastName) {
+      res.status(400).json({ message: 'Wszystkie pola są wymagane!' });
+      return;
+    }
+
+    const [existingUsers]: any = await db.query('SELECT * FROM user WHERE email = ?', [email]);
+    if (existingUsers.length > 0) {
+      res.status(400).json({ message: 'Użytkownik o tym adresie e-mail już istnieje!' });
+      return;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Rola jest wpisana na sztywno jako 'headmaster'
+    await db.query(
+      'INSERT INTO user (email, password, name, surname, role) VALUES (?, ?, ?, ?, ?)',
+      [email, hashedPassword, firstName, lastName, 'headmaster']
+    );
+
+    res.status(201).json({ message: 'Konto dyrektora zostało utworzone!' });
+  } catch (error: any) {
+    console.error('Błąd rejestracji dyrektora:', error.message);
+    res.status(500).json({ message: 'Błąd serwera podczas rejestracji dyrektora.' });
   }
 };
 
@@ -60,7 +90,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'super_tajny_klucz_rezerwowy';
+    const JWT_SECRET = process.env.JWT_SECRET as string;
     const token = jwt.sign(
       { id: user.id_user, email: user.email, role: user.role },
       JWT_SECRET,

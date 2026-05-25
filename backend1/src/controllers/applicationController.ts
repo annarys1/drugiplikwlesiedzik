@@ -43,3 +43,27 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
     res.status(500).json({ message: 'Błąd serwera podczas składania wniosku.' });
   }
 };
+export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id_application } = req.params; // ID wniosku z adresu URL
+    const { status } = req.body; // 'approved' lub 'rejected'
+
+    // Prosta walidacja statusu
+    const validStatuses = ['approved', 'rejected', 'submitted'];
+    if (!validStatuses.includes(status)) {
+      res.status(400).json({ message: 'Nieprawidłowy status wniosku!' });
+      return;
+    }
+
+    // Aktualizacja w bazie
+    await db.query(
+      'UPDATE application SET status = ? WHERE id_application = ?',
+      [status, id_application]
+    );
+
+    res.status(200).json({ message: `Status wniosku zmieniony na: ${status}` });
+  } catch (error: any) {
+    console.error('Błąd zmiany statusu:', error.message);
+    res.status(500).json({ message: 'Błąd serwera podczas aktualizacji statusu.' });
+  }
+};
