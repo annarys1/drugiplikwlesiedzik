@@ -23,6 +23,37 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
       res.status(401).json({ message: 'Nie udało się zidentyfikować rodzica!' });
       return;
     }
+     // DODALAM
+  // 1. Zamień wejście na pewny typ string
+    const peselString = String(pesel || "");
+
+    // 2. Walidacja: jeśli długość nie jest równa 11 LUB zawiera znaki inne niż cyfry
+    if (peselString.length !== 11 || !/^\d+$/.test(peselString)) {
+        console.log("Walidacja PESEL nie przeszła dla:", peselString);
+        res.status(400).json({ message: 'PESEL musi mieć dokładnie 11 cyfr!' });
+        return; // <--- To "return" jest kluczowe! Ono zatrzymuje funkcję
+    }
+    const birthDate = new Date(date_birth);
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+
+    const hasHadBirthdayThisYear =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+    if (!hasHadBirthdayThisYear) {
+    age--;
+    }
+
+    if (age >= 7) {
+    res.status(400).json({ message: 'Dziecko nie może być starsze niż 7 lat!' });
+    return;
+    }
+    if (age < 0) {
+    res.status(400).json({ message: 'Nieprawidłowa data urodzenia!' });
+    return;
+    }
 
     // Wstawiamy dane do bazy zachowując nazwy z Twojego screena (id_rodzica, surename)
     await db.query(
@@ -30,9 +61,9 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
       [parentId, childName, childSurname, pesel, date_birth, domicile]
     );
 
-    res.status(201).json({ message: 'Dziecko zostało pomyślnie dodane do systemu!' });
+    res.status(201).json({ message: 'Dziecko zostało pomyślnie dodane do systemu! da mi sp0koj' });
   } catch (error: any) {
     console.error('Błąd podczas dodawania dziecka:', error.message);
-    res.status(500).json({ message: 'Błąd serwera podczas dodawania dziecka.' });
+    res.status(500).json({ message: 'Błąd serwera podczas dodawania dziecka. da mi sp0koj' });
   }
 };
