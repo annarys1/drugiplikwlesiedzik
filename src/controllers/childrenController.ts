@@ -55,7 +55,17 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
     res.status(400).json({ message: 'Nieprawidłowa data urodzenia!' });
     return;
     }
+    //dodałam ja
+    // 2. Sprawdzenie czy dziecko o tym PESEL już istnieje
+    const [existingChildren]: any = await db.query(
+      'SELECT id_children FROM children WHERE pesel = ?',
+      [pesel]
+    );
 
+    if (existingChildren.length > 0) {
+      res.status(409).json({ message: 'Dziecko o podanym numerze PESEL jest już zarejestrowane w systemie.' });
+      return;
+    }
 
 
 
