@@ -1,4 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext'; // TWÓJ PLIK
+import ProtectedRoute from './components/ProtectedRoute'; // TWÓJ PLIK
+
 import MainLayout from './layouts/MainLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/Home';
@@ -20,15 +23,36 @@ const router = createBrowserRouter([
   },
   {
     path: '/panel',
-    element: <DashboardLayout />,
+    // --- TWÓJ WKŁAD: Chronimy cały segment /panel ---
+    element: <ProtectedRoute />, 
     children: [
-      { path: 'rodzic', element: <ParentDashboard /> },
-      { path: 'placowka', element: <FacilityDashboard /> },
-      { path: 'gmina', element: <GminaDashboard /> },
+      {
+        element: <DashboardLayout />,
+        children: [
+          // --- TWÓJ WKŁAD: Tutaj sprawdzamy konkretne role (OD KOLEGÓW) ---
+          { 
+            path: 'rodzic', 
+            element: <ProtectedRoute allowedRoles={['PARENT']}><ParentDashboard /></ProtectedRoute> 
+          },
+          { 
+            path: 'placowka', 
+            element: <ProtectedRoute allowedRoles={['FACILITY']}><FacilityDashboard /></ProtectedRoute> 
+          },
+          { 
+            path: 'gmina', 
+            element: <ProtectedRoute allowedRoles={['GMINA']}><GminaDashboard /></ProtectedRoute> 
+          },
+        ],
+      },
     ],
   },
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    // --- TWÓJ WKŁAD: AuthProvider musi być na samej górze ---
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }
