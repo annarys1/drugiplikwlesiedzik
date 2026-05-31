@@ -32,7 +32,7 @@ const router = createBrowserRouter([
           // --- TWÓJ WKŁAD: Tutaj sprawdzamy konkretne role (OD KOLEGÓW) ---
           { 
             path: 'rodzic', 
-            element: <ProtectedRoute allowedRoles={['PARENT']}><ParentDashboard /></ProtectedRoute> 
+            element: <ProtectedRoute allowedRoles={['parents']}><ParentDashboard /></ProtectedRoute> 
           },
           { 
             path: 'placowka', 

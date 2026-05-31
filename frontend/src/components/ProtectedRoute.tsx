@@ -7,19 +7,25 @@ interface Props {
 }
 
 const ProtectedRoute = ({ allowedRoles, children }: Props) => {
-  const { user, isAuthenticated } = useAuth();
+  // Dodajemy isLoading z naszego Contextu
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  // Jeśli użytkownik nie jest zalogowany, wyślij go do strony logowania
+  // 1. Dopóki aplikacja sprawdza localStorage, pokazujemy ekran ładowania
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center font-semibold text-indigo-600">Ładowanie sesji...</div>;
+  }
+
+  // 2. Jeśli ładowanie się skończyło i użytkownik NIE jest zalogowany -> do logowania
   if (!isAuthenticated) {
     return <Navigate to="/logowanie" replace />;
   }
 
-  // Jeśli rola użytkownika nie pasuje do wymaganej (np. rodzic w panelu gminy)
+  // 3. Jeśli rola użytkownika nie pasuje do wymaganej
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/" replace />;
   }
 
-  // Jeśli wszystko jest ok, pokaż zawartość (Outlet lub dzieci)
+  // 4. Jeśli wszystko jest ok -> pokaż zawartość
   return children ? <>{children}</> : <Outlet />;
 };
 
