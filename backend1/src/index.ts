@@ -24,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/children', childrenRoutes);
 app.use('/api/institution', institutionRoutes);
 app.use('/api/application', applicationRoutes);
+app.use('/api/applications', applicationRoutes);
 
 
 app.use('/api', healthRoutes);
