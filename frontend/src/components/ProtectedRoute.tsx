@@ -7,12 +7,30 @@ interface Props {
 }
 
 const ProtectedRoute = ({ allowedRoles, children }: Props) => {
-  // Dodajemy isLoading z naszego Contextu
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth() as any;
 
   // 1. Dopóki aplikacja sprawdza localStorage, pokazujemy ekran ładowania
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center font-semibold text-indigo-600">Ładowanie sesji...</div>;
+    return (
+      <div
+        className="flex h-screen flex-col items-center justify-center bg-[#efb7cd]"
+        role="status"
+        aria-label="Trwa ładowanie aplikacji"
+      >
+        <div className="relative mb-6" aria-hidden="true">
+          <div className="w-16 h-16 rounded-full border-4 border-pink-200 border-t-pink-700 animate-spin" />
+        </div>
+        <p
+          className="font-semibold text-lg text-pink-900 tracking-wide"
+          style={{ fontFamily: "'Georgia', serif" }}
+        >
+          Ładowanie sesji…
+        </p>
+        <p className="text-pink-700 text-sm mt-1 opacity-75">
+          Sprawdzamy Twoje dane
+        </p>
+      </div>
+    );
   }
 
   // 2. Jeśli ładowanie się skończyło i użytkownik NIE jest zalogowany -> do logowania

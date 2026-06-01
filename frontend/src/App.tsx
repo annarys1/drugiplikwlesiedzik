@@ -1,9 +1,8 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext'; // TWÓJ PLIK
-import ProtectedRoute from './components/ProtectedRoute'; // TWÓJ PLIK
-
+import { AuthProvider } from './context/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import DashboardLayout from './layouts/DashboardLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -23,26 +22,35 @@ const router = createBrowserRouter([
   },
   {
     path: '/panel',
-    // --- TWÓJ WKŁAD: Chronimy cały segment /panel ---
-    element: <ProtectedRoute />, 
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
-        element: <DashboardLayout />,
-        children: [
-          // --- TWÓJ WKŁAD: Tutaj sprawdzamy konkretne role (OD KOLEGÓW) ---
-          { 
-            path: 'rodzic', 
-            element: <ProtectedRoute allowedRoles={['parents']}><ParentDashboard /></ProtectedRoute> 
-          },
-          { 
-            path: 'placowka', 
-            element: <ProtectedRoute allowedRoles={['FACILITY']}><FacilityDashboard /></ProtectedRoute> 
-          },
-          { 
-            path: 'gmina', 
-            element: <ProtectedRoute allowedRoles={['GMINA']}><GminaDashboard /></ProtectedRoute> 
-          },
-        ],
+        path: 'rodzic',
+        element: (
+          <ProtectedRoute allowedRoles={['parents']}>
+            <ParentDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'placowka',
+        element: (
+          <ProtectedRoute allowedRoles={['facility']}>
+            <FacilityDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'gmina',
+        element: (
+          <ProtectedRoute allowedRoles={['gmina']}>
+            <GminaDashboard />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
@@ -50,7 +58,6 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    // --- TWÓJ WKŁAD: AuthProvider musi być na samej górze ---
     <AuthProvider>
       <RouterProvider router={router} />
     </AuthProvider>
