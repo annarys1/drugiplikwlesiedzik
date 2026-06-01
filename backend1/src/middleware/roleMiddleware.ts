@@ -10,7 +10,7 @@ export const checkRole = (roles: string[]) => {
 
  
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Brak uprawnień: Dostęp tylko dla dyrektorów!' });
+      return res.status(403).json({ message: 'Brak uprawnień: Dostęp tylko dla administratora!' });
     }
 
     next();

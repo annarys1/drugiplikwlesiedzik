@@ -8,10 +8,12 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
     const { id_children, id_institution, selectedCriteriaIds } = req.body;
     const parentId = req.user?.id;
 
+
     if (!id_children || !id_institution) {
       res.status(400).json({ message: 'Id dziecka oraz id placówki są wymagane!' });
       return;
     }
+    const allowedStatuses = ['submitted', 'approved', 'rejected', 'correction_needed'];
 
     await connection.beginTransaction();
 
@@ -63,8 +65,10 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
 
 export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { id_application } = req.params;
+    const { id_application } = req.params; 
     const { status } = req.body;
+    const userId = req.user?.id; // ID zalogowanego dyrektora z tokena
+    
     const allowedStatuses = ['submitted', 'approved', 'rejected', 'correction_needed'];
 
     if (!status || !allowedStatuses.includes(status)) {
@@ -72,6 +76,23 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
       return;
     }
 
+    // WERYFIKACJA: Czy zalogowany użytkownik jest dyrektorem tej placówki?
+    // Sprawdzamy czy wniosek id_application należy do placówki, 
+    // w której id_headmaster zgadza się z ID zalogowanego użytkownika
+    const [rows]: any = await db.query(
+      `SELECT a.id_application 
+       FROM application a
+       JOIN institution i ON a.id_institution = i.id_institution
+       WHERE a.id_application = ? AND i.id_headmaster = ?`, 
+       [id_application, userId]
+    );
+
+    if (rows.length === 0) {
+      res.status(403).json({ message: 'Brak uprawnień do edycji wniosku tej placówki!' });
+      return;
+    }
+
+    // Jeśli powyżej nie zwróciło błędu, aktualizujemy status
     await db.query(
       'UPDATE application SET status = ? WHERE id_application = ?',
       [status, id_application]
@@ -79,7 +100,7 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
 
     res.status(200).json({ message: 'Status wniosku zaktualizowany!' });
   } catch (error: any) {
-    console.error(error.message);
+    console.error('Błąd zmiany statusu:', error.message);
     res.status(500).json({ message: 'Błąd serwera' });
   }
 };

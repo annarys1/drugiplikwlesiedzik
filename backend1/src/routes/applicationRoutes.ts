@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // Pliki będą lądować w folderze 
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}_${file.originalname}`); // Unikalna nazwa pliku
+    cb(null, `${Date.now()}_${file.originalname}`); 
   }
 });
 
@@ -48,9 +48,8 @@ router.post('/upload', authenticateToken as any, upload.single('document'), uplo
 
 
 
-// TRASY DLA ADMINISTRATORA / DYREKTORA
 
-// 7. Zmiana statusu wniosku przez Dyrektora (Panel Administratora)
+// 7. Zmiana statusu wniosku przez Dyrektora 
 router.patch('/status/:id_application', authenticateToken as any, checkRole(['headmaster']), updateApplicationStatus);
 
 export default router;
