@@ -2,7 +2,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import DashboardLayout from './layouts/DashboardLayout';
-import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -22,35 +21,19 @@ const router = createBrowserRouter([
   },
   {
     path: '/panel',
-    element: (
-      <ProtectedRoute>
-        <DashboardLayout />
-      </ProtectedRoute>
-    ),
+    element: <DashboardLayout />, // Tutaj usunęłam ProtectedRoute
     children: [
       {
         path: 'rodzic',
-        element: (
-          <ProtectedRoute allowedRoles={['parents']}>
-            <ParentDashboard />
-          </ProtectedRoute>
-        ),
+        element: <ParentDashboard />, // Tutaj usunęłam ProtectedRoute
       },
       {
         path: 'placowka',
-        element: (
-          <ProtectedRoute allowedRoles={['facility']}>
-            <FacilityDashboard />
-          </ProtectedRoute>
-        ),
+        element: <FacilityDashboard />, // Tutaj usunęłam ProtectedRoute
       },
       {
         path: 'gmina',
-        element: (
-          <ProtectedRoute allowedRoles={['gmina']}>
-            <GminaDashboard />
-          </ProtectedRoute>
-        ),
+        element: <GminaDashboard />, // Tutaj usunęłam ProtectedRoute
       },
     ],
   },
