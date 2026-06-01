@@ -81,7 +81,7 @@ export default function Sidebar() {
                   : 'text-gray-600 hover:bg-pink-50 hover:text-pink-700',
               ].join(' ')
             }
-            aria-current={({ isActive }: { isActive: boolean }) => (isActive ? 'page' : undefined) as any}
+//            aria-current={({ isActive }: { isActive: boolean }) => (isActive ? 'page' : undefined) as any}
           >
             {icon}
             <span>{label}</span>

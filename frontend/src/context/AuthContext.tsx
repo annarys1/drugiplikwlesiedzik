@@ -1,5 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-
+import { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
 // 1. Definiujemy strukturę użytkownika zgodnie z tym, co wysyła backend
 interface User {
   id: number;
