@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import pool from './config/db'; // To automatycznie wywoła nasz test połączenia z bazą
+import pool from './config/db'; 
 import authRoutes from './routes/authRoutes';
 import childrenRoutes from './routes/childrenRoutes';
 import institutionRoutes from './routes/institutionRoutes';
@@ -16,7 +16,7 @@ app.use(cors({
   origin: 'http://localhost:3000', // frontend
   credentials: true
 }));
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8801;
 
 
 app.use(express.json());
@@ -33,8 +33,8 @@ app.get('/', (req, res) => {
   res.send('System rekrutacji EduEnroll działa pomyślnie!');
 });
 
-app.listen(PORT, () => {
-  console.log(`Serwer backendowy EduEnroll wystartował na porcie ${PORT}`);
+app.listen(parseInt(PORT as string), '0.0.0.0', () => {
+  console.log(`Serwer backendowy EduEnroll wystartował na porcie ${PORT} i nasłuchuje na 0.0.0.0`);
 });
 
 
