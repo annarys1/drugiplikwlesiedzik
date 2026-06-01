@@ -5,7 +5,7 @@ import db from '../config/db';
 export const uploadDocument = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id_application, id_criterion } = req.body;
-    const file = req.file; // Tu Multer wrzuci dane o pliku
+    const file = req.file; 
 
     if (!file) {
       res.status(400).json({ message: 'Nie przesłano żadnego pliku!' });

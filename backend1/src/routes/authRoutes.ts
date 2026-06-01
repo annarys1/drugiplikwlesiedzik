@@ -1,12 +1,17 @@
 import { Router } from 'express';
-import { registerUser, loginUser } from '../controllers/authController';
+import { registerUser,registerHeadmaster, loginUser } from '../controllers/authController';
+import { authenticateToken } from '../middleware/authMiddleware';
+import { checkRole } from '../middleware/roleMiddleware';
 
 const router = Router();
 
-// Rejestracja
+// Trasa dla zwykłego rodzica (publiczna)
 router.post('/register', registerUser);
 
-// Logowanie
+// Trasa dla dyrektora (TYLKO DLA ADMINA)
+router.post('/register-headmaster', authenticateToken as any, checkRole(['admin']), registerHeadmaster);
+
+// Logowanie (publiczne)
 router.post('/login', loginUser);
 
 export default router;

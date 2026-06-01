@@ -19,36 +19,27 @@ export const addInstitution = async (req: AuthenticatedRequest, res: Response): 
   try {
     const { name, city, max_capacity } = req.body;
 
-    
     if (!name || !city || !max_capacity) {
-      res.status(400).json({ message: 'Wszystkie pola (nazwa, miasto, maksymalna pojemność) są wymagane!' });
+      res.status(400).json({ message: 'Wszystkie pola są wymagane!' });
       return;
     }
 
-    
-    const headmasterId = req.user?.id;
+
     const userRole = req.user?.role;
-
-   
-    if (userRole !== 'headmaster') {
-      res.status(403).json({ message: 'Brak uprawnień. Tylko dyrektor może dodać placówkę!' });
+    if (userRole !== 'admin') {
+      res.status(403).json({ message: 'Brak uprawnień. Tylko administrator może dodawać placówki!' });
       return;
     }
 
-    if (!headmasterId) {
-      res.status(401).json({ message: 'Nie udało się zidentyfikować dyrektora.' });
-      return;
-    }
-
-    
+    // Tutaj możesz przypisać id_headmaster jako null, skoro placówka jest tworzona przez admina
     await db.query(
-      'INSERT INTO institution (id_headmaster, name, city, max_capacity) VALUES (?, ?, ?, ?)',
-      [headmasterId, name, city, max_capacity]
+      'INSERT INTO institution (name, city, max_capacity, id_headmaster) VALUES (?, ?, ?, ?)',
+      [name, city, max_capacity, null] 
     );
 
-    res.status(201).json({ message: 'Placówka została pomyślnie utworzona w systemie!' });
+    res.status(201).json({ message: 'Placówka została pomyślnie utworzona przez administratora!' });
   } catch (error: any) {
-    console.error('Błąd podczas dodawania placówki:', error.message);
-    res.status(500).json({ message: 'Błąd serwera podczas dodawania placówki.' });
+    console.error('Błąd:', error.message);
+    res.status(500).json({ message: 'Błąd serwera.' });
   }
 };
