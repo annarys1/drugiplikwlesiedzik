@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer'; 
 import { authenticateToken } from '../middleware/authMiddleware';
 import { checkRole } from '../middleware/roleMiddleware';
-
+import { runRecruitmentAlgorithm } from '../controllers/recruitmentController';
 
 import { createApplication, updateApplicationStatus } from '../controllers/applicationController';
 import { saveDraft, getDraft, submitApplication } from '../controllers/applicationDraftController';
@@ -52,4 +52,5 @@ router.post('/upload', authenticateToken as any, upload.single('document'), uplo
 // 7. Zmiana statusu wniosku przez Dyrektora 
 router.patch('/status/:id_application', authenticateToken as any, checkRole(['headmaster']), updateApplicationStatus);
 
+router.post('/run-recruitment', authenticateToken as any, checkRole(['admin']), runRecruitmentAlgorithm);
 export default router;

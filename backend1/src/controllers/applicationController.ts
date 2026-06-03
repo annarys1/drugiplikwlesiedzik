@@ -5,55 +5,48 @@ import db from '../config/db';
 export const createApplication = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const connection = await db.getConnection();
   try {
-    const { id_children, id_institution, selectedCriteriaIds } = req.body;
+    // Oczekujemy struktury body z frontendu: 
+    // { id_children: 1, selectedCriteria: [{ id_criterion: 32, declared_value: 8 }, { id_criterion: 5, declared_value: 0 }] }
+    const { id_children, selectedCriteria } = req.body;
     const parentId = req.user?.id;
 
-
-    if (!id_children || !id_institution) {
-      res.status(400).json({ message: 'Id dziecka oraz id placówki są wymagane!' });
+    if (!id_children) {
+      res.status(400).json({ message: 'Id dziecka jest wymagane!' });
       return;
     }
-    const allowedStatuses = ['submitted', 'approved', 'rejected', 'correction_needed'];
 
     await connection.beginTransaction();
 
-    // 1. Sprawdzenie duplikatu
+    // 1. Sprawdzenie duplikatu - czy dziecko nie ma już aktywnego wniosku
     const [existing]: any = await connection.query(
-        'SELECT id_application FROM application WHERE id_children = ? AND id_institution = ?',
-        [id_children, id_institution]
+        "SELECT id_application FROM application WHERE id_children = ? AND status != 'rejected'",
+        [id_children]
     );
     if (existing.length > 0) {
         await connection.rollback();
-        res.status(400).json({ message: 'Wniosek dla tego dziecka do tej placówki już istnieje!' });
+        res.status(400).json({ message: 'Aktywny wniosek dla tego dziecka już istnieje w systemie!' });
         return;
     }
 
-    // 2. Obliczenie punktów
-    let totalPoints = 0;
-    if (selectedCriteriaIds && selectedCriteriaIds.length > 0) {
-      const [criteria]: any = await connection.query(
-        'SELECT SUM(criterion_point) as total FROM criteria WHERE id_criterion IN (?)',
-        [selectedCriteriaIds]
-      );
-      totalPoints = criteria[0].total || 0;
-    }
-
-    // 3. Wstawienie wniosku
+    // 2. Wstawienie wniosku ogólnego (punkty startowe = 0, placówka docelowa = NULL na start)
     const [result]: any = await connection.query(
-      'INSERT INTO application (id_parent, id_children, id_institution, status, points) VALUES (?, ?, ?, ?, ?)',
-      [parentId, id_children, id_institution, 'submitted', totalPoints]
+      'INSERT INTO application (id_parent, id_children, id_institution, status) VALUES (?, ?, NULL, ?, 0)',
+      [parentId, id_children, 'submitted']
     );
 
     const applicationId = result.insertId;
 
-    // 4. Powiązanie kryteriów
-    if (selectedCriteriaIds && selectedCriteriaIds.length > 0) {
-      const values = selectedCriteriaIds.map((id: number) => [applicationId, id]);
-      await connection.query('INSERT INTO application_criteria (id_application, id_criterion) VALUES ?', [values]);
+    // 3. Powiązanie wybranych kryteriów wraz z zadeklarowaną wartością (godzinami) do nowej tabeli application_criteria
+    if (selectedCriteria && selectedCriteria.length > 0) {
+      const values = selectedCriteria.map((c: any) => [applicationId, c.id_criterion, c.declared_value || 0]);
+      await connection.query(
+        'INSERT INTO application_criteria (id_application, id_criterion, declared_value) VALUES ?', 
+        [values]
+      );
     }
     
     await connection.commit();
-    res.status(201).json({ message: 'Wniosek złożony pomyślnie!', totalPoints });
+    res.status(201).json({ message: 'Wniosek złożony pomyślnie!', id_application: applicationId });
   } catch (error: any) {
     await connection.rollback();
     console.error('Błąd składania wniosku:', error.message);
@@ -67,7 +60,7 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
   try {
     const { id_application } = req.params; 
     const { status } = req.body;
-    const userId = req.user?.id; // ID zalogowanego dyrektora z tokena
+    const userId = req.user?.id;
     
     const allowedStatuses = ['submitted', 'approved', 'rejected', 'correction_needed'];
 
@@ -76,14 +69,12 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
       return;
     }
 
-    // WERYFIKACJA: Czy zalogowany użytkownik jest dyrektorem tej placówki?
-    // Sprawdzamy czy wniosek id_application należy do placówki, 
-    // w której id_headmaster zgadza się z ID zalogowanego użytkownika
+    // WERYFIKACJA: Czy dyrektor zarządza chociaż jedną z placówek, które ten rodzic wybrał w preferencjach?
     const [rows]: any = await db.query(
-      `SELECT a.id_application 
-       FROM application a
-       JOIN institution i ON a.id_institution = i.id_institution
-       WHERE a.id_application = ? AND i.id_headmaster = ?`, 
+      `SELECT ai.id_application 
+       FROM application_institutions ai
+       JOIN institution i ON ai.id_institution = i.id_institution
+       WHERE ai.id_application = ? AND i.id_headmaster = ?`, 
        [id_application, userId]
     );
 
@@ -92,7 +83,6 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
       return;
     }
 
-    // Jeśli powyżej nie zwróciło błędu, aktualizujemy status
     await db.query(
       'UPDATE application SET status = ? WHERE id_application = ?',
       [status, id_application]
