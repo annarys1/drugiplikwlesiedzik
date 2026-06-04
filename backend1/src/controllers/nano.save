@@ -1,3 +1,4 @@
+
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import db from '../config/db';

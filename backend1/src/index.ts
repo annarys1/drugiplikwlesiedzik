@@ -7,23 +7,23 @@ import childrenRoutes from './routes/childrenRoutes';
 import institutionRoutes from './routes/institutionRoutes';
 import applicationRoutes from './routes/applicationRoutes';
 import healthRoutes from './routes/healthRoutes';
-
+import criteriaRoutes from './routes/criteriaRoutes';
 
 dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:3000', // frontend
+  origin: 'http://localhost:8802', // frontend
   credentials: true
 }));
-const PORT = process.env.PORT || 8801;
+const PORT = process.env.PORT || 8803;
 
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/children', childrenRoutes);
 app.use('/api/institution', institutionRoutes);
-
+app.use('/api/criteria', criteriaRoutes);
 app.use('/api/applications', applicationRoutes);
 
 
@@ -37,5 +37,3 @@ app.get('/', (req, res) => {
 app.listen(parseInt(PORT as string), '0.0.0.0', () => {
   console.log(`Serwer backendowy EduEnroll wystartował na porcie ${PORT} i nasłuchuje na 0.0.0.0`);
 });
-
-

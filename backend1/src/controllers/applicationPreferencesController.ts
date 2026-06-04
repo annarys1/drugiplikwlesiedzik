@@ -51,7 +51,7 @@ export const savePreferences = async (req: AuthenticatedRequest, res: Response):
       const pointsForThisInst = await calculatePointsForInstitution(
         connection, 
         id_application,
-        inst.id_institution, 
+        inst.id_institution 
         
       );
 
@@ -59,10 +59,12 @@ export const savePreferences = async (req: AuthenticatedRequest, res: Response):
         'INSERT INTO application_institutions (id_application, id_institution, preference_order, calculated_points) VALUES (?, ?, ?, ?)',
         [id_application, inst.id_institution, inst.order, pointsForThisInst]
       );
+      
+      console.log(`Dla placówki ${inst.id_institution} obliczono: ${pointsForThisInst} pkt.`);
     }
-    await connection.commit();
-    res.status(200).json({ message: 'Preferencje placówek zostały pomyślnie zapisane!' });
 
+    await connection.commit();
+    res.status(200).json({ message: 'Preferencje oraz punkty zostały pomyślnie zapisane!' });
   } catch (error: any) {
     console.error('Błąd podczas zapisu preferencji:', error.message);
     res.status(500).json({ message: 'Błąd serwera podczas zapisu preferencji.' });
