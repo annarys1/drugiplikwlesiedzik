@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import ParentDashboard from './pages/ParentDashboard';
 import FacilityDashboard from './pages/FacilityDashboard';
 import GminaDashboard from './pages/GminaDashboard';
+import ApplicationPage from './pages/ApplicationPage';
 
 const router = createBrowserRouter([
   {
@@ -21,20 +22,12 @@ const router = createBrowserRouter([
   },
   {
     path: '/panel',
-    element: <DashboardLayout />, // Tutaj usunęłam ProtectedRoute
+    element: <DashboardLayout />,
     children: [
-      {
-        path: 'rodzic',
-        element: <ParentDashboard />, // Tutaj usunęłam ProtectedRoute
-      },
-      {
-        path: 'placowka',
-        element: <FacilityDashboard />, // Tutaj usunęłam ProtectedRoute
-      },
-      {
-        path: 'gmina',
-        element: <GminaDashboard />, // Tutaj usunęłam ProtectedRoute
-      },
+      { path: 'rodzic', element: <ParentDashboard /> },
+      { path: 'rodzic/nowy-wniosek', element: <ApplicationPage /> },
+      { path: 'placowka', element: <FacilityDashboard /> },
+      { path: 'gmina', element: <GminaDashboard /> },
     ],
   },
 ]);
