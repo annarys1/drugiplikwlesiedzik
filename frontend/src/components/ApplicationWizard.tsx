@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // ← Pobierz token
+import { validatePESEL, validateAge, validatePhone, validateAddress } from '../utils/validators';
+
 
 // --- Typy ---
 interface FormData {
@@ -78,7 +81,7 @@ function StepIndicator({ current }: { current: number }) {
   );
 }
 
-// --- Krok 1: Wybór placówki (wielokrotny wybór) ---
+// --- Krok 1: Wybór placówki ---
 function Step1Facility({
   form,
   onChange,
@@ -152,7 +155,7 @@ function Step1Facility({
   );
 }
 
-// --- Krok 2: Dane dziecka ---
+// --- Krok 2: Dane dziecka (POPRAWIONY z walidacją) ---
 type StringFields = {
   [K in keyof FormData]: FormData[K] extends string ? K : never;
 }[keyof FormData];
@@ -286,17 +289,22 @@ function Step3Summary({ form }: { form: FormData }) {
   );
 }
 
-// --- Główny komponent ---
+// --- Główny komponent (UPDATED) ---
 export default function ApplicationWizard() {
   const navigate = useNavigate();
+  const { token } = useAuth(); // ← DEV 2: Pobierz token JWT
+
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<Record<StringFields, string>>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false); // ← DEV 2: Loading state
+  const [serverError, setServerError] = useState<string | null>(null); // ← DEV 2: Error z backendu
 
   const updateForm = (field: StringFields, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    setServerError(null); // Wyczyść błąd serwera
   };
 
   const validateStep = (): boolean => {
@@ -306,17 +314,38 @@ export default function ApplicationWizard() {
 
     if (step === 1) {
       const newErrors: Partial<Record<StringFields, string>> = {};
+
+      // ✅ DEV 2: Dodana walidacja PESEL (suma kontrolna)
+      const peselValidation = validatePESEL(form.childPesel);
+      if (!peselValidation.valid) {
+        newErrors.childPesel = peselValidation.message;
+      }
+
+      // ✅ DEV 2: Dodana walidacja wieku (max 7 lat)
+      const ageValidation = validateAge(form.childBirthDate);
+      if (!ageValidation.valid) {
+        newErrors.childBirthDate = ageValidation.message;
+      }
+
+      // Reszta walidacji
       if (!form.childFirstName.trim()) newErrors.childFirstName = 'Imię jest wymagane';
       if (!form.childLastName.trim()) newErrors.childLastName = 'Nazwisko jest wymagane';
-      if (!form.childPesel.trim()) {
-        newErrors.childPesel = 'PESEL jest wymagany';
-      } else if (!/^\d{11}$/.test(form.childPesel)) {
-        newErrors.childPesel = 'PESEL musi mieć dokładnie 11 cyfr';
-      }
       if (!form.childBirthDate) newErrors.childBirthDate = 'Data urodzenia jest wymagana';
+
+      // ✅ DEV 2: Walidacja telefonu
+      const phoneValidation = validatePhone(form.parentPhone);
+      if (!phoneValidation.valid) {
+        newErrors.parentPhone = phoneValidation.message;
+      }
+
+      // ✅ DEV 2: Walidacja adresu
+      const addressValidation = validateAddress(form.address);
+      if (!addressValidation.valid) {
+        newErrors.address = addressValidation.message;
+      }
+
       if (!form.parentName.trim()) newErrors.parentName = 'Imię i nazwisko rodzica jest wymagane';
-      if (!form.parentPhone.trim()) newErrors.parentPhone = 'Numer telefonu jest wymagany';
-      if (!form.address.trim()) newErrors.address = 'Adres jest wymagany';
+
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
     }
@@ -330,12 +359,57 @@ export default function ApplicationWizard() {
 
   const handleBack = () => {
     setErrors({});
+    setServerError(null);
     setStep((s) => s - 1);
   };
 
-  const handleSubmit = () => {
-    // TODO: wysłać do backendu
-    setSubmitted(true);
+  // ✅ DEV 2: Wysyłanie danych do backendu
+  const handleSubmit = async () => {
+    setLoading(true);
+    setServerError(null);
+
+    try {
+      // Przygotowanie danych do wysłania
+      const childData = {
+        firstName: form.childFirstName,
+        lastName: form.childLastName,
+        pesel: form.childPesel,
+        date_birth: form.childBirthDate, // Format: YYYY-MM-DD
+        domicile: form.address,
+      };
+
+      console.log('📤 Wysyłam dane:', childData);
+      console.log('🔐 Token:', token?.substring(0, 20) + '...');
+
+      // Fetch do backendu
+      const response = await fetch('http://149.156.194.192:8803/api/children/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // ← Bearer Token z AuthContext
+        },
+        body: JSON.stringify(childData),
+      });
+
+      const data = await response.json();
+      console.log('📥 Response z backendu:', data);
+
+      if (response.ok) {
+        // ✅ Sukces (201 Created)
+        console.log('✅ Dziecko dodane pomyślnie!');
+        setSubmitted(true);
+      } else {
+        // ❌ Błąd z backendu (400, 409, 500, itp.)
+        console.error('❌ Błąd z backendu:', data.message);
+        setServerError(data.message || 'Błąd serwera');
+      }
+    } catch (error) {
+      // ❌ Błąd sieci (network error)
+      console.error('❌ Błąd sieci:', error);
+      setServerError('Błąd sieci. Sprawdź połączenie z internetem.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -366,6 +440,18 @@ export default function ApplicationWizard() {
       <StepIndicator current={step} />
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+        {/* ✅ DEV 2: Wyświetlanie błędu z backendu */}
+        {serverError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
+            <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-red-700">
+              <strong>Błąd:</strong> {serverError}
+            </p>
+          </div>
+        )}
+
         {step === 0 && (
           <Step1Facility
             form={form}
@@ -382,7 +468,8 @@ export default function ApplicationWizard() {
           {step > 0 ? (
             <button
               onClick={handleBack}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gray-400"
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gray-400 disabled:opacity-40"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -392,7 +479,8 @@ export default function ApplicationWizard() {
           ) : (
             <button
               onClick={() => navigate('/panel/rodzic')}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gray-400"
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gray-400 disabled:opacity-40"
             >
               Anuluj
             </button>
@@ -401,7 +489,7 @@ export default function ApplicationWizard() {
           {step < 2 ? (
             <button
               onClick={handleNext}
-              disabled={step === 0 && form.facilityIds.length === 0}
+              disabled={(step === 0 && form.facilityIds.length === 0) || loading}
               className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink-400 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Dalej
@@ -412,12 +500,24 @@ export default function ApplicationWizard() {
           ) : (
             <button
               onClick={handleSubmit}
-              className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-green-400"
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-green-400 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Złóż wniosek
+              {loading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Wysyłam...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Złóż wniosek
+                </>
+              )}
             </button>
           )}
         </div>
@@ -425,4 +525,3 @@ export default function ApplicationWizard() {
     </div>
   );
 }
-

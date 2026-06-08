@@ -130,3 +130,4 @@ export function validateAddress(address: string): { valid: boolean; message: str
   }
 
   return { valid: true, message: '' };
+}

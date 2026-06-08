@@ -1,15 +1,16 @@
 import { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
-// 1. Definiujemy strukturę użytkownika zgodnie z tym, co wysyła backend
+
 interface User {
   id: number;
   email: string;
   firstName: string;
   lastName: string;
-  role: string; // Tutaj trafi "parents" ze screena
+  role: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (credentials: any) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -19,23 +20,43 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 2. Automatyczne sprawdzanie sesji przy starcie aplikacji
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    let savedUser = localStorage.getItem('user');
+    let savedToken = localStorage.getItem('token');
 
-    if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
+    // Jeśli tokenu nie ma - ustaw mock token (do testowania)
+    if (!savedToken) {
+      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwicm9sZSI6InBhcmVudHMifQ.test';
+      const mockUser = {
+        id: 1,
+        email: "test@test.com",
+        firstName: "Test",
+        lastName: "User",
+        role: "parents"
+      };
+      
+      localStorage.setItem('token', mockToken);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      savedToken = mockToken;
+      savedUser = JSON.stringify(mockUser);
+      
+      console.log('✅ Mock token ustawiony w AuthContext');
     }
+
+    if (savedUser && savedToken) {
+      setUser(JSON.parse(savedUser));
+      setToken(savedToken);
+    }
+    
     setIsLoading(false);
   }, []);
 
-  // 3. Prawdziwa funkcja logowania łącząca się z backendem
   const login = async (credentials: any) => {
     try {
-      // 
       const response = await fetch('http://149.156.194.192:8803/api/auth/login', {
         method: 'POST',
         headers: {
@@ -51,11 +72,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const data = await response.json();
 
-      // Zapisujemy dane zgodnie ze wskazówkami kolegów
       localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user)); // Zapisujemy profil, żeby nie zniknął po F5
+      localStorage.setItem('user', JSON.stringify(data.user));
       
       setUser(data.user);
+      setToken(data.token);
       return true;
 
     } catch (error) {
@@ -66,18 +87,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
       {!isLoading && children}
     </AuthContext.Provider>
   );
 };
 
-// Hook do łatwego używania logowania w komponentach
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
