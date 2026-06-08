@@ -13,8 +13,10 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:3000', // frontend
-  credentials: true
+  origin: ['http://149.156.194.192:8802', 'http://localhost:8802'], // Twój serwer IP oraz localhost
+  credentials: true,                // Zezwolenie na ciasteczka/autoryzację
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Dozwolone metody
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'], // Dozwolone nagłówki
 }));
 const PORT = process.env.PORT || 8801;
 
@@ -37,5 +39,3 @@ app.get('/', (req, res) => {
 app.listen(parseInt(PORT as string), '0.0.0.0', () => {
   console.log(`Serwer backendowy EduEnroll wystartował na porcie ${PORT} i nasłuchuje na 0.0.0.0`);
 });
-
-
