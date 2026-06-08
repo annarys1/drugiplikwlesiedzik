@@ -381,13 +381,14 @@ export default function ApplicationWizard() {
       console.log('📤 Wysyłam dane:', childData);
       console.log('🔐 Token:', token?.substring(0, 20) + '...');
 
-      // Fetch do backendu
-      const response = await fetch('http://149.156.194.192:8803/api/children/add', {
+      // Fetch do backendu z dopisanym credentials
+      const response = await fetch('http://149.156.194.192:8801/api/children/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`, // ← Bearer Token z AuthContext
         },
+        credentials: 'include', // ← DODANE TUTAJ: Żeby poprawnie przekazywać sesję/nagłówki CORS z backendem
         body: JSON.stringify(childData),
       });
 
@@ -408,6 +409,7 @@ export default function ApplicationWizard() {
       console.error('❌ Błąd sieci:', error);
       setServerError('Błąd sieci. Sprawdź połączenie z internetem.');
     } finally {
+      // Zawsze wyłącz loading state
       setLoading(false);
     }
   };
@@ -423,7 +425,7 @@ export default function ApplicationWizard() {
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Wniosek złożony!</h2>
         <p className="text-gray-500 mb-6 max-w-sm">
           Wniosek o przyjęcie dziecka do {form.facilityIds.length === 1 ? 'placówki' : `${form.facilityIds.length} placówek`}{' '}
-          został pomyślnie złożony. Możesz śledzić jego status w panelu.
+          został pomyślnie złożony. Możecz śledzić jego status w panelu.
         </p>
         <button
           onClick={() => navigate('/panel/rodzic')}
@@ -513,7 +515,7 @@ export default function ApplicationWizard() {
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                   Złóż wniosek
                 </>
