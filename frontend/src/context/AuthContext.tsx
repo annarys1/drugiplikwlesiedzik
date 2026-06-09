@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 3. Prawdziwa funkcja logowania łącząca się z backendem
   const login = async (credentials: any) => {
     try {
-      // UWAGA: Zmień port 5000 na taki, na jakim faktycznie działają Twoi koledzy!
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      // 
+      const response = await fetch('http://149.156.194.192:8803/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
