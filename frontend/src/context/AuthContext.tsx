@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
+/*import { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
 
 interface User {
   id: number;
@@ -106,3 +106,58 @@ export const useAuth = () => {
   }
   return context;
 };
+*/
+import { createContext, useContext, useState, ReactNode } from 'react';
+
+interface AuthContextType {
+  // Funkcja logowania, którą wywołasz w Login.tsx
+  login: (credentials: any) => Promise<{ success: boolean; role?: string; message?: string }>;
+  token: string | null;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+
+  const login = async (credentials: any) => {
+    try {
+      // Zakładamy endpoint, o który pytałaś
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Tu backend musi zwrócić token i rolę
+        localStorage.setItem('token', data.token);
+        setToken(data.token);
+        return { success: true, role: data.user.role };
+      }
+      return { success: false, message: data.message || 'Błąd logowania' };
+    } catch (err) {
+      return { success: false, message: 'Błąd połączenia z serwerem' };
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ login, token, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('użyj AuthProvider w App.tsx!');
+  return context;
+}

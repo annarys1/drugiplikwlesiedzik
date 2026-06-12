@@ -37,12 +37,16 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
-      // Przekazujemy credentials jako obiekt — zgodnie z login(credentials: any) Julii
-      const success = await login({ email, password });
-      if (success) {
-        navigate('/panel/rodzic');
+      
+      const result = await login({ email, password });
+      
+      if (result.success) {
+        if (result.role === 'parents') navigate('/panel/rodzic');
+        else if (result.role === 'headmaster') navigate('/panel/placowka');
+        else if (result.role === 'admin') navigate('/panel/gmina');
+        else navigate('/'); // Ścieżka awaryjna, jakby rola była inna
       } else {
-        setError('Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.');
+        setError(result.message || 'Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.');
       }
     } catch {
       setError('Błąd połączenia z serwerem. Spróbuj za chwilę.');
