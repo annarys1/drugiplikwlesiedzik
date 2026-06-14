@@ -80,8 +80,8 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
     );
 
     res.status(201).json({ message: 'Dziecko zostało pomyślnie dodane do systemu!' });
-  } catch (error: any) {
-    console.error('Błąd podczas dodawania dziecka:', error.message);
-    res.status(500).json({ message: 'Błąd serwera podczas dodawania dziecka.' });
-  }
-};
+ } catch (error: any) {
+  console.log("--- BŁĄD SERWERA ---");
+  console.log(error); // To pokaże cały stos błędów (stack trace)
+  res.status(500).json({ message: 'Błąd serwera', details: error.message });
+}};

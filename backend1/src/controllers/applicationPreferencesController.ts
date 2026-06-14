@@ -1,8 +1,10 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import db from '../config/db';
+import { calculatePointsForInstitution } from '../utils/pointsCalculator';
 
 export const savePreferences = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+ const connection = await db.getConnection();
   try {
     const parentId = req.user?.id;
     const { id_application, institutions } = req.body;
@@ -37,22 +39,37 @@ export const savePreferences = async (req: AuthenticatedRequest, res: Response):
       res.status(400).json({ message: 'Każda placówka musi mieć unikalny priorytet (1, 2 lub 3)!' });
       return;
     }
-
+    //dodaje Wioletka
+    await connection.beginTransaction();
+    
     // 1. Czyszczenie starych preferencji dla tego wniosku
     await db.query('DELETE FROM application_institutions WHERE id_application = ?', [id_application]);
 
     // 2. Zapisywanie nowych preferencji
-    for (const inst of institutions) {
-      await db.query(
-        'INSERT INTO application_institutions (id_application, id_institution, preference_order) VALUES (?, ?, ?)',
-        [id_application, inst.id_institution, inst.order]
+ for (const inst of institutions) {
+      // Obliczamy punkty specyficzne dla tego przedszkola/żłobka
+      const pointsForThisInst = await calculatePointsForInstitution(
+        connection, 
+        id_application,
+        inst.id_institution 
+        
       );
+
+      await connection.query(
+        'INSERT INTO application_institutions (id_application, id_institution, preference_order, calculated_points) VALUES (?, ?, ?, ?)',
+        [id_application, inst.id_institution, inst.order, pointsForThisInst]
+      );
+      
+      console.log(`Dla placówki ${inst.id_institution} obliczono: ${pointsForThisInst} pkt.`);
     }
 
-    res.status(200).json({ message: 'Preferencje placówek zostały pomyślnie zapisane!' });
-
+    await connection.commit();
+    res.status(200).json({ message: 'Preferencje oraz punkty zostały pomyślnie zapisane!' });
   } catch (error: any) {
     console.error('Błąd podczas zapisu preferencji:', error.message);
     res.status(500).json({ message: 'Błąd serwera podczas zapisu preferencji.' });
+  }
+  finally {
+    connection.release();
   }
 };

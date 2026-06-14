@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // ← Pobierz token
+import { useAuth } from '../context/AuthContext';
 import { validatePESEL, validateAge, validatePhone, validateAddress } from '../utils/validators';
-
 
 // --- Typy ---
 interface FormData {
@@ -17,6 +16,14 @@ interface FormData {
   parentPhone: string;
 }
 
+// Typ odpowiedzi z GET /api/institution/list
+interface Facility {
+  id: string;         // id_institution z backendu
+  name: string;
+  city: string;
+  max_capacity: number;
+}
+
 const INITIAL_FORM: FormData = {
   facilityIds: [],
   facilityNames: [],
@@ -29,15 +36,7 @@ const INITIAL_FORM: FormData = {
   parentPhone: '',
 };
 
-// --- Placówki (placeholder — docelowo z API) ---
-const FACILITIES = [
-  { id: '1', name: 'Placówka 1', type: 'Przedszkole', address: 'ul. XYZ 1' },
-  { id: '2', name: 'Placówka 2', type: 'Przedszkole', address: 'ul. XYZ 2' },
-  { id: '3', name: 'Placówka 3', type: 'Żłobek', address: 'ul. XYZ 3' },
-  { id: '4', name: 'Placówka 4', type: 'Przedszkole', address: 'ul. XYZ 4' },
-  { id: '5', name: 'Placówka 5', type: 'Przedszkole', address: 'ul. XYZ 5' },
-];
-
+const MAX_FACILITIES = 3;
 const STEPS = ['Wybór placówki', 'Dane dziecka', 'Podsumowanie'];
 
 // --- Pasek postępu ---
@@ -51,16 +50,16 @@ function StepIndicator({ current }: { current: number }) {
           <div key={idx} className="flex items-center">
             <div className="flex flex-col items-center">
               <div
-                className={`
-                  w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all
-                  ${isCompleted ? 'bg-pink-600 border-pink-600 text-white' : ''}
-                  ${isActive ? 'bg-white border-pink-600 text-pink-600 shadow-md' : ''}
-                  ${!isCompleted && !isActive ? 'bg-gray-100 border-gray-300 text-gray-400' : ''}
-                `}
+                className={[
+                  'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all',
+                  isCompleted ? 'bg-pink-600 border-pink-600 text-white' : '',
+                  isActive ? 'bg-white border-pink-600 text-pink-600 shadow-md' : '',
+                  !isCompleted && !isActive ? 'bg-gray-100 border-gray-300 text-gray-400' : '',
+                ].join(' ')}
                 aria-current={isActive ? 'step' : undefined}
               >
                 {isCompleted ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
@@ -81,81 +80,274 @@ function StepIndicator({ current }: { current: number }) {
   );
 }
 
-// --- Krok 1: Wybór placówki ---
+// --- Krok 1: Priorytetyzacja placówek ---
 function Step1Facility({
   form,
   onChange,
+  facilities,
+  facilitiesLoading,
+  facilitiesError,
 }: {
   form: FormData;
   onChange: (ids: string[], names: string[]) => void;
+  facilities: Facility[];
+  facilitiesLoading: boolean;
+  facilitiesError: string | null;
 }) {
-  const toggle = (id: string, name: string) => {
-    const alreadySelected = form.facilityIds.includes(id);
-    if (alreadySelected) {
-      const idx = form.facilityIds.indexOf(id);
-      const newIds = form.facilityIds.filter((_, i) => i !== idx);
-      const newNames = form.facilityNames.filter((_, i) => i !== idx);
-      onChange(newIds, newNames);
-    } else {
-      onChange([...form.facilityIds, id], [...form.facilityNames, name]);
-    }
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const listId = useId();
+
+  const addFacility = (id: string, name: string) => {
+    if (form.facilityIds.includes(id) || form.facilityIds.length >= MAX_FACILITIES) return;
+    onChange([...form.facilityIds, id], [...form.facilityNames, name]);
   };
+
+  const removeFacility = (idx: number) => {
+    const newIds = form.facilityIds.filter((_, i) => i !== idx);
+    const newNames = form.facilityNames.filter((_, i) => i !== idx);
+    onChange(newIds, newNames);
+  };
+
+  const moveFacility = (idx: number, direction: 'up' | 'down') => {
+    const newIds = [...form.facilityIds];
+    const newNames = [...form.facilityNames];
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= newIds.length) return;
+    [newIds[idx], newIds[targetIdx]] = [newIds[targetIdx], newIds[idx]];
+    [newNames[idx], newNames[targetIdx]] = [newNames[targetIdx], newNames[idx]];
+    onChange(newIds, newNames);
+  };
+
+  const handleDragStart = (e: React.DragEvent, idx: number) => {
+    setDraggedIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIdx(idx);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) {
+      setDraggedIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    const newIds = [...form.facilityIds];
+    const newNames = [...form.facilityNames];
+    const [movedId] = newIds.splice(draggedIdx, 1);
+    const [movedName] = newNames.splice(draggedIdx, 1);
+    newIds.splice(targetIdx, 0, movedId);
+    newNames.splice(targetIdx, 0, movedName);
+    onChange(newIds, newNames);
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const priorityColor = (idx: number) => {
+    const colors = [
+      'bg-pink-600 text-white',
+      'bg-pink-400 text-white',
+      'bg-pink-200 text-pink-900',
+    ];
+    return colors[idx] ?? 'bg-gray-200 text-gray-700';
+  };
+
+  const availableFacilities = facilities.filter(f => !form.facilityIds.includes(String(f.id)));
+  const canAddMore = form.facilityIds.length < MAX_FACILITIES;
+
+  // --- Stan ładowania ---
+  if (facilitiesLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
+        <svg className="w-8 h-8 animate-spin text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <p className="text-sm">Pobieranie listy placówek…</p>
+      </div>
+    );
+  }
+
+  // --- Stan błędu ---
+  if (facilitiesError) {
+    return (
+      <div className="py-8">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex gap-3" role="alert">
+          <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-sm font-medium text-red-700">Nie udało się pobrać listy placówek</p>
+            <p className="text-xs text-red-500 mt-1">{facilitiesError}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-800 mb-1">Wybierz placówki</h2>
       <p className="text-gray-500 text-sm mb-6">
-        Możesz wybrać kilka placówek jednocześnie. Zaznacz wszystkie, do których chcesz złożyć wniosek.
+        Wybierz do {MAX_FACILITIES} placówek i ustaw ich kolejność priorytetów.{' '}
+        <span className="font-medium text-pink-700">1. wybór</span> to placówka, do której chcesz trafić przede wszystkim.
       </p>
-      <div className="flex flex-col gap-3" role="group" aria-label="Lista placówek">
-        {FACILITIES.map((f) => {
-          const selected = form.facilityIds.includes(f.id);
-          return (
-            <label
-              key={f.id}
-              className={`
-                flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
-                ${selected
-                  ? 'border-pink-500 bg-pink-50 shadow-sm'
-                  : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/40'}
-              `}
-            >
-              <input
-                type="checkbox"
-                value={f.id}
-                checked={selected}
-                onChange={() => toggle(f.id, f.name)}
-                className="mt-1 accent-pink-600 w-4 h-4"
-                aria-label={f.name}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-gray-800">{f.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${f.type === 'Żłobek' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                    {f.type}
-                  </span>
-                </div>
-                <span className="text-sm text-gray-500">{f.address}</span>
-              </div>
-              {selected && (
-                <svg className="w-5 h-5 text-pink-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </label>
-          );
-        })}
-      </div>
+
+      {/* Lista wybranych placówek z priorytetami */}
       {form.facilityIds.length > 0 && (
-        <p className="text-sm text-pink-600 font-medium mt-4">
-          Wybrano {form.facilityIds.length} {form.facilityIds.length === 1 ? 'placówkę' : 'placówki/placówek'}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm font-semibold text-gray-700">
+              Wybrane placówki ({form.facilityIds.length}/{MAX_FACILITIES})
+            </span>
+            <span className="text-xs text-gray-400">— przeciągnij lub użyj strzałek, żeby zmienić kolejność</span>
+          </div>
+
+          <ul
+            id={listId}
+            role="list"
+            aria-label="Wybrane placówki w kolejności priorytetów"
+            className="flex flex-col gap-2"
+          >
+            {form.facilityIds.map((id, idx) => {
+              const facility = facilities.find(f => String(f.id) === id);
+              if (!facility) return null;
+              const isDragging = draggedIdx === idx;
+              const isDragOver = dragOverIdx === idx;
+
+              return (
+                <li
+                  key={id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={[
+                    'flex items-center gap-3 p-3 rounded-xl border-2 bg-white transition-all select-none',
+                    isDragging ? 'opacity-40 border-pink-400 shadow-none' : '',
+                    isDragOver && !isDragging ? 'border-pink-500 shadow-md bg-pink-50' : '',
+                    !isDragging && !isDragOver ? 'border-pink-200 shadow-sm hover:border-pink-400' : '',
+                  ].join(' ')}
+                >
+                  <span className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing flex-shrink-0" aria-hidden="true">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 6a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm8-16a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4z" />
+                    </svg>
+                  </span>
+
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg flex-shrink-0 ${priorityColor(idx)}`}>
+                    {idx + 1}. wybór
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-800 text-sm truncate">{facility.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{facility.city}</p>
+                  </div>
+
+                  <div className="flex flex-col gap-0.5 flex-shrink-0" role="group" aria-label={`Zmień priorytet: ${facility.name}`}>
+                    <button
+                      type="button"
+                      onClick={() => moveFacility(idx, 'up')}
+                      disabled={idx === 0}
+                      aria-label={`Przesuń ${facility.name} wyżej`}
+                      className="p-1 rounded text-gray-400 hover:text-pink-600 hover:bg-pink-50 disabled:opacity-20 disabled:cursor-not-allowed transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveFacility(idx, 'down')}
+                      disabled={idx === form.facilityIds.length - 1}
+                      aria-label={`Przesuń ${facility.name} niżej`}
+                      className="p-1 rounded text-gray-400 hover:text-pink-600 hover:bg-pink-50 disabled:opacity-20 disabled:cursor-not-allowed transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeFacility(idx)}
+                    aria-label={`Usuń ${facility.name} z listy`}
+                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Lista dostępnych placówek */}
+      {canAddMore ? (
+        <div>
+          <p className="text-sm font-semibold text-gray-700 mb-3">
+            {form.facilityIds.length === 0 ? 'Dostępne placówki' : 'Dodaj kolejną placówkę'}
+          </p>
+          {availableFacilities.length === 0 ? (
+            <p className="text-sm text-gray-400 italic py-2">Brak innych dostępnych placówek.</p>
+          ) : (
+            <div className="flex flex-col gap-2" role="group" aria-label="Dostępne placówki do wybrania">
+              {availableFacilities.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => addFacility(String(f.id), f.name)}
+                  className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-pink-400 hover:bg-pink-50 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 group"
+                  aria-label={`Dodaj ${f.name} do listy`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-pink-100 flex items-center justify-center flex-shrink-0 transition">
+                    <svg className="w-4 h-4 text-gray-400 group-hover:text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-800 text-sm">{f.name}</p>
+                    <p className="text-xs text-gray-400">{f.city} · maks. {f.max_capacity} miejsc</p>
+                  </div>
+                  <span className="text-xs text-pink-500 font-medium flex-shrink-0 opacity-0 group-hover:opacity-100 transition">
+                    Dodaj →
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="p-4 bg-pink-50 border border-pink-200 rounded-xl text-sm text-pink-700">
+          <span className="font-semibold">Osiągnięto limit {MAX_FACILITIES} placówek.</span>{' '}
+          Usuń jedną z listy powyżej, żeby dodać inną.
+        </div>
+      )}
+
+      {form.facilityIds.length === 0 && !facilitiesLoading && (
+        <p className="mt-4 text-xs text-gray-400 text-center">
+          Musisz wybrać co najmniej jedną placówkę, żeby przejść dalej.
         </p>
       )}
     </div>
   );
 }
 
-// --- Krok 2: Dane dziecka (POPRAWIONY z walidacją) ---
+// --- Krok 2: Dane dziecka ---
 type StringFields = {
   [K in keyof FormData]: FormData[K] extends string ? K : never;
 }[keyof FormData];
@@ -183,13 +375,13 @@ function Step2Child({
       <input
         id={id}
         type={type}
-        value={form[id]}
+        value={form[id] as string}
         onChange={(e) => onChange(id, e.target.value)}
         placeholder={placeholder}
-        className={`
-          w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 transition
-          ${errors[id] ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white hover:border-gray-400'}
-        `}
+        className={[
+          'w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 transition',
+          errors[id] ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white hover:border-gray-400',
+        ].join(' ')}
         aria-invalid={!!errors[id]}
         aria-describedby={errors[id] ? `${id}-error` : hint ? `${id}-hint` : undefined}
       />
@@ -203,24 +395,66 @@ function Step2Child({
   );
 
   return (
-    <div>
-      <h2 className="text-xl font-bold text-gray-800 mb-1">Dane dziecka</h2>
-      <p className="text-gray-500 text-sm mb-6">Uzupełnij dane dziecka, które ma zostać przyjęte do placówki.</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {field('childFirstName', 'Imię dziecka', 'text', 'np. Jan')}
-        {field('childLastName', 'Nazwisko dziecka', 'text', 'np. Kowalski')}
-        {field('childPesel', 'PESEL dziecka', 'text', 'np. 21040512345', 'PESEL składa się z 11 cyfr')}
-        {field('childBirthDate', 'Data urodzenia', 'date')}
+    <div className="flex flex-col gap-5">
+      <div>
+        <h2 className="text-xl font-bold text-gray-800 mb-1">Dane dziecka</h2>
+        <p className="text-gray-500 text-sm">Wypełnij dane dziecka, dla którego składasz wniosek.</p>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Dane rodzica / opiekuna</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {field('parentName', 'Imię i nazwisko rodzica', 'text', 'np. Anna Kowalska')}
-          {field('parentPhone', 'Numer telefonu', 'tel', 'np. 600 123 456')}
-          <div className="sm:col-span-2">
-            {field('address', 'Adres zamieszkania dziecka', 'text', 'np. ul. Lipowa 3, Biskupice')}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {field('childFirstName', 'Imię dziecka', 'text', 'np. Anna')}
+        {field('childLastName', 'Nazwisko dziecka', 'text', 'np. Kowalska')}
+      </div>
+
+      {field('childPesel', 'PESEL dziecka', 'text', '12345678901', 'Dokładnie 11 cyfr')}
+      {field('childBirthDate', 'Data urodzenia', 'date', '', 'Dziecko musi mieć poniżej 7 lat')}
+      {field('address', 'Adres zamieszkania', 'text', 'ul. Przykładowa 1, 32-020 Wieliczka')}
+
+      <hr className="border-gray-100" />
+      <p className="text-sm font-semibold text-gray-700 -mb-2">Dane rodzica/opiekuna</p>
+      {field('parentName', 'Imię i nazwisko rodzica', 'text', 'np. Jan Kowalski')}
+      {field('parentPhone', 'Numer telefonu', 'tel', 'np. 600 123 456')}
+    </div>
+  );
+}
+
+// --- Krok 3: Podsumowanie ---
+function Step3Summary({ form }: { form: FormData }) {
+  return (
+    <div>
+      <h2 className="text-xl font-bold text-gray-800 mb-1">Podsumowanie wniosku</h2>
+      <p className="text-gray-500 text-sm mb-6">Sprawdź dane przed złożeniem wniosku.</p>
+
+      <div className="flex flex-col gap-4">
+        <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
+          <p className="text-xs font-semibold text-pink-700 uppercase tracking-wide mb-3">Placówki (kolejność priorytetów)</p>
+          <ol className="flex flex-col gap-2" aria-label="Wybrane placówki w kolejności priorytetów">
+            {form.facilityNames.map((name, idx) => (
+              <li key={idx} className="flex items-center gap-3 text-sm">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${idx === 0 ? 'bg-pink-600 text-white' : idx === 1 ? 'bg-pink-400 text-white' : 'bg-pink-200 text-pink-900'}`}>
+                  {idx + 1}
+                </span>
+                <span className="text-gray-800">{name}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dane dziecka</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+            <div><span className="text-gray-400">Imię i nazwisko:</span><br /><span className="font-medium text-gray-800">{form.childFirstName} {form.childLastName}</span></div>
+            <div><span className="text-gray-400">PESEL:</span><br /><span className="font-medium text-gray-800">{form.childPesel}</span></div>
+            <div><span className="text-gray-400">Data urodzenia:</span><br /><span className="font-medium text-gray-800">{form.childBirthDate}</span></div>
+            <div><span className="text-gray-400">Adres:</span><br /><span className="font-medium text-gray-800">{form.address}</span></div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dane rodzica/opiekuna</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+            <div><span className="text-gray-400">Imię i nazwisko:</span><br /><span className="font-medium text-gray-800">{form.parentName}</span></div>
+            <div><span className="text-gray-400">Telefon:</span><br /><span className="font-medium text-gray-800">{form.parentPhone}</span></div>
           </div>
         </div>
       </div>
@@ -228,83 +462,44 @@ function Step2Child({
   );
 }
 
-// --- Krok 3: Podsumowanie ---
-function Step3Summary({ form }: { form: FormData }) {
-  const selectedFacilities = FACILITIES.filter((f) => form.facilityIds.includes(f.id));
-
-  const Row = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex flex-col sm:flex-row sm:items-center py-2.5 border-b border-gray-100 last:border-0 gap-0.5 sm:gap-4">
-      <span className="text-sm text-gray-500 sm:w-48 shrink-0">{label}</span>
-      <span className="text-sm font-medium text-gray-800">{value || '—'}</span>
-    </div>
-  );
-
-  return (
-    <div>
-      <h2 className="text-xl font-bold text-gray-800 mb-1">Sprawdź wniosek</h2>
-      <p className="text-gray-500 text-sm mb-6">Upewnij się, że wszystkie dane są poprawne przed wysłaniem.</p>
-
-      <div className="space-y-4">
-        <div className="bg-pink-50 border border-pink-200 rounded-xl p-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-pink-600 mb-3">
-            Wybrane placówki ({selectedFacilities.length})
-          </h3>
-          {selectedFacilities.map((f, i) => (
-            <div key={f.id} className={`py-2.5 ${i < selectedFacilities.length - 1 ? 'border-b border-pink-100' : ''}`}>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium text-gray-800">{f.name}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${f.type === 'Żłobek' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                  {f.type}
-                </span>
-              </div>
-              <span className="text-xs text-gray-500">{f.address}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Dane dziecka</h3>
-          <Row label="Imię i nazwisko" value={`${form.childFirstName} ${form.childLastName}`} />
-          <Row label="PESEL" value={form.childPesel} />
-          <Row label="Data urodzenia" value={form.childBirthDate} />
-        </div>
-
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Dane rodzica / opiekuna</h3>
-          <Row label="Imię i nazwisko" value={form.parentName} />
-          <Row label="Telefon" value={form.parentPhone} />
-          <Row label="Adres zamieszkania" value={form.address} />
-        </div>
-      </div>
-
-      <div className="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex gap-3">
-        <svg className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
-        </svg>
-        <p className="text-sm text-blue-700">
-          Po wysłaniu wniosek otrzyma status <strong>Oczekujący</strong>. Możesz śledzić jego postęp w panelu rodzica.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// --- Główny komponent (UPDATED) ---
+// --- Główny komponent Wizard ---
 export default function ApplicationWizard() {
+  const { token } = useAuth();
   const navigate = useNavigate();
-  const { token } = useAuth(); // ← DEV 2: Pobierz token JWT
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<Record<StringFields, string>>>({});
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false); // ← DEV 2: Loading state
-  const [serverError, setServerError] = useState<string | null>(null); // ← DEV 2: Error z backendu
+
+  // --- Pobieranie placówek z API ---
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(true);
+  const [facilitiesError, setFacilitiesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // GET /api/institution/list — publiczny endpoint (bez tokenu)
+    fetch('/api/institution/list')
+      .then(res => {
+        if (!res.ok) throw new Error(`Serwer zwrócił ${res.status}`);
+        return res.json();
+      })
+      .then((data: Facility[]) => {
+        setFacilities(data);
+        setFacilitiesLoading(false);
+      })
+      .catch((err: Error) => {
+        console.error('❌ Błąd pobierania placówek:', err.message);
+        setFacilitiesError(err.message ?? 'Nieznany błąd');
+        setFacilitiesLoading(false);
+      });
+  }, []);
 
   const updateForm = (field: StringFields, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-    setServerError(null); // Wyczyść błąd serwera
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
   const validateStep = (): boolean => {
@@ -315,34 +510,23 @@ export default function ApplicationWizard() {
     if (step === 1) {
       const newErrors: Partial<Record<StringFields, string>> = {};
 
-      // ✅ DEV 2: Dodana walidacja PESEL (suma kontrolna)
       const peselValidation = validatePESEL(form.childPesel);
-      if (!peselValidation.valid) {
-        newErrors.childPesel = peselValidation.message;
+      if (!peselValidation.valid) newErrors.childPesel = peselValidation.message;
+
+      if (form.childBirthDate) {
+        const ageValidation = validateAge(form.childBirthDate);
+        if (!ageValidation.valid) newErrors.childBirthDate = ageValidation.message;
       }
 
-      // ✅ DEV 2: Dodana walidacja wieku (max 7 lat)
-      const ageValidation = validateAge(form.childBirthDate);
-      if (!ageValidation.valid) {
-        newErrors.childBirthDate = ageValidation.message;
-      }
-
-      // Reszta walidacji
       if (!form.childFirstName.trim()) newErrors.childFirstName = 'Imię jest wymagane';
       if (!form.childLastName.trim()) newErrors.childLastName = 'Nazwisko jest wymagane';
       if (!form.childBirthDate) newErrors.childBirthDate = 'Data urodzenia jest wymagana';
 
-      // ✅ DEV 2: Walidacja telefonu
       const phoneValidation = validatePhone(form.parentPhone);
-      if (!phoneValidation.valid) {
-        newErrors.parentPhone = phoneValidation.message;
-      }
+      if (!phoneValidation.valid) newErrors.parentPhone = phoneValidation.message;
 
-      // ✅ DEV 2: Walidacja adresu
       const addressValidation = validateAddress(form.address);
-      if (!addressValidation.valid) {
-        newErrors.address = addressValidation.message;
-      }
+      if (!addressValidation.valid) newErrors.address = addressValidation.message;
 
       if (!form.parentName.trim()) newErrors.parentName = 'Imię i nazwisko rodzica jest wymagane';
 
@@ -363,53 +547,94 @@ export default function ApplicationWizard() {
     setStep((s) => s - 1);
   };
 
-  // ✅ DEV 2: Wysyłanie danych do backendu
   const handleSubmit = async () => {
     setLoading(true);
     setServerError(null);
 
     try {
-      // Przygotowanie danych do wysłania
+      // Krok 1: Dodaj dziecko — POST /api/children/add
       const childData = {
         firstName: form.childFirstName,
         lastName: form.childLastName,
         pesel: form.childPesel,
-        date_birth: form.childBirthDate, // Format: YYYY-MM-DD
+        date_birth: form.childBirthDate,
         domicile: form.address,
       };
 
-      console.log('📤 Wysyłam dane:', childData);
-      console.log('🔐 Token:', token?.substring(0, 20) + '...');
+      console.log('📤 Wysyłam dane dziecka:', childData);
 
-      // Fetch do backendu z dopisanym credentials
-      const response = await fetch('http://149.156.194.192:8801/api/children/add', {
+      const childRes = await fetch('/api/children/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // ← Bearer Token z AuthContext
+          'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include', // ← DODANE TUTAJ: Żeby poprawnie przekazywać sesję/nagłówki CORS z backendem
+        credentials: 'include',
         body: JSON.stringify(childData),
       });
 
-      const data = await response.json();
-      console.log('📥 Response z backendu:', data);
+      const childJson = await childRes.json();
+      console.log('📥 Odpowiedź /children/add:', childJson);
 
-      if (response.ok) {
-        // ✅ Sukces (201 Created)
-        console.log('✅ Dziecko dodane pomyślnie!');
-        setSubmitted(true);
-      } else {
-        // ❌ Błąd z backendu (400, 409, 500, itp.)
-        console.error('❌ Błąd z backendu:', data.message);
-        setServerError(data.message || 'Błąd serwera');
+      if (!childRes.ok) {
+        setServerError(childJson.message || 'Błąd podczas dodawania dziecka.');
+        return;
       }
+
+      const childId = childJson.childId;
+
+      // Krok 2: Złóż wniosek — POST /api/applications/apply
+      const appRes = await fetch('/api/applications/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ id_children: childId }),
+      });
+
+      const appJson = await appRes.json();
+      console.log('📥 Odpowiedź /applications/apply:', appJson);
+
+      if (!appRes.ok) {
+        setServerError(appJson.message || 'Błąd podczas składania wniosku.');
+        return;
+      }
+
+      const applicationId = appJson.id_application;
+
+      // Krok 3: Zapisz preferencje placówek — POST /api/applications/preferences
+      const institutions = form.facilityIds.map((id, idx) => ({
+        id_institution: Number(id),
+        order: idx + 1,   // 1 = najwyższy priorytet
+      }));
+
+      const prefRes = await fetch('/api/applications/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ id_application: applicationId, institutions }),
+      });
+
+      const prefJson = await prefRes.json();
+      console.log('📥 Odpowiedź /preferences:', prefJson);
+
+      if (!prefRes.ok) {
+        setServerError(prefJson.message || 'Błąd podczas zapisywania preferencji.');
+        return;
+      }
+
+      console.log('✅ Wniosek złożony pomyślnie!');
+      setSubmitted(true);
+
     } catch (error) {
-      // ❌ Błąd sieci (network error)
       console.error('❌ Błąd sieci:', error);
       setServerError('Błąd sieci. Sprawdź połączenie z internetem.');
     } finally {
-      // Zawsze wyłącz loading state
       setLoading(false);
     }
   };
@@ -418,14 +643,16 @@ export default function ApplicationWizard() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Wniosek złożony!</h2>
-        <p className="text-gray-500 mb-6 max-w-sm">
-          Wniosek o przyjęcie dziecka do {form.facilityIds.length === 1 ? 'placówki' : `${form.facilityIds.length} placówek`}{' '}
-          został pomyślnie złożony. Możecz śledzić jego status w panelu.
+        <p className="text-gray-500 mb-2 max-w-sm">
+          Wniosek o przyjęcie dziecka do {form.facilityIds.length === 1 ? 'placówki' : `${form.facilityIds.length} placówek`} został pomyślnie złożony.
+        </p>
+        <p className="text-gray-400 text-sm mb-6 max-w-sm">
+          Kolejność priorytetów: {form.facilityNames.join(' → ')}
         </p>
         <button
           onClick={() => navigate('/panel/rodzic')}
@@ -442,15 +669,12 @@ export default function ApplicationWizard() {
       <StepIndicator current={step} />
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-        {/* ✅ DEV 2: Wyświetlanie błędu z backendu */}
         {serverError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
-            <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3" role="alert">
+            <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-red-700">
-              <strong>Błąd:</strong> {serverError}
-            </p>
+            <p className="text-sm text-red-700"><strong>Błąd:</strong> {serverError}</p>
           </div>
         )}
 
@@ -458,6 +682,9 @@ export default function ApplicationWizard() {
           <Step1Facility
             form={form}
             onChange={(ids, names) => setForm((prev) => ({ ...prev, facilityIds: ids, facilityNames: names }))}
+            facilities={facilities}
+            facilitiesLoading={facilitiesLoading}
+            facilitiesError={facilitiesError}
           />
         )}
         {step === 1 && (
@@ -465,7 +692,6 @@ export default function ApplicationWizard() {
         )}
         {step === 2 && <Step3Summary form={form} />}
 
-        {/* Nawigacja */}
         <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100">
           {step > 0 ? (
             <button
@@ -473,7 +699,7 @@ export default function ApplicationWizard() {
               disabled={loading}
               className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gray-400 disabled:opacity-40"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Wstecz
@@ -491,11 +717,11 @@ export default function ApplicationWizard() {
           {step < 2 ? (
             <button
               onClick={handleNext}
-              disabled={(step === 0 && form.facilityIds.length === 0) || loading}
+              disabled={(step === 0 && form.facilityIds.length === 0) || loading || facilitiesLoading}
               className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink-400 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Dalej
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -507,14 +733,14 @@ export default function ApplicationWizard() {
             >
               {loading ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   Wysyłam...
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                   Złóż wniosek
