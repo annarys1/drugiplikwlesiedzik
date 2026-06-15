@@ -107,9 +107,11 @@ export const useAuth = () => {
   return context;
 };
 */
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 interface AuthContextType {
+  user: { id: number; email: string; firstName: string; lastName: string; role: string; } | null;
+  isLoading: boolean;
   // Funkcja logowania, którą wywołasz w Login.tsx
   login: (credentials: any) => Promise<{ success: boolean; role?: string; message?: string }>;
   token: string | null;
@@ -150,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ login, token, logout }}>
+    <AuthContext.Provider value={{ user: null, isLoading: false, login, token, logout }}>
       {children}
     </AuthContext.Provider>
   );
