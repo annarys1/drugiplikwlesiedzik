@@ -1,6 +1,14 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import db from '../config/db';
+import crypto from 'crypto';
+
+const PESEL_SALT = process.env.PESEL_SALT || 'domyslna-bardzo-tajna-sol';
+
+const hashPesel = (pesel: string): string => {
+  // Dodajemy sól do peselu przed haszowaniem
+  return crypto.createHash('sha256').update(pesel + PESEL_SALT).digest('hex');
+};
 
 export const addChild = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -33,7 +41,7 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
     res.status(400).json({ message: 'PESEL musi mieć 11 cyfr!' });
     return;
     }
-
+	const peselHash = hashPesel(pesel);
     const birthDate = new Date(date_birth);
 
     const today = new Date();
@@ -56,10 +64,9 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
     return;
     }
     //dodałam ja
-    // 2. Sprawdzenie czy dziecko o tym PESEL już istnieje
     const [existingChildren]: any = await db.query(
       'SELECT id_children FROM children WHERE pesel = ?',
-      [pesel]
+      [peselHash]
     );
 
     if (existingChildren.length > 0) {
@@ -76,12 +83,12 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
     // Wstawiamy dane do bazy zachowując nazwy z Twojego screena (id_rodzica, surename)
     await db.query(
       'INSERT INTO children (id_rodzica, name, surname, pesel, date_birth, domicile) VALUES (?, ?, ?, ?, ?, ?)',
-      [parentId, childName, childSurname, pesel, date_birth, domicile]
+      [parentId, childName, childSurname, peselHash, date_birth, domicile]
     );
 
     res.status(201).json({ message: 'Dziecko zostało pomyślnie dodane do systemu!' });
  } catch (error: any) {
   console.log("--- BŁĄD SERWERA ---");
-  console.log(error); // To pokaże cały stos błędów (stack trace)
+  console.log(error); 
   res.status(500).json({ message: 'Błąd serwera', details: error.message });
 }};
