@@ -18,7 +18,7 @@ interface FormData {
 
 // Typ odpowiedzi z GET /api/institution/list
 interface Facility {
-  id: string;         // id_institution z backendu
+  id_institution: number;
   name: string;
   city: string;
   max_capacity: number;
@@ -162,7 +162,7 @@ function Step1Facility({
     return colors[idx] ?? 'bg-gray-200 text-gray-700';
   };
 
-  const availableFacilities = facilities.filter(f => !form.facilityIds.includes(String(f.id)));
+  const availableFacilities = facilities.filter(f => !form.facilityIds.includes(String(f.id_institution)));
   const canAddMore = form.facilityIds.length < MAX_FACILITIES;
 
   // --- Stan ładowania ---
@@ -219,7 +219,7 @@ function Step1Facility({
             className="flex flex-col gap-2"
           >
             {form.facilityIds.map((id, idx) => {
-              const facility = facilities.find(f => String(f.id) === id);
+              const facility = facilities.find(f => String(f.id_institution) === id);
               if (!facility) return null;
               const isDragging = draggedIdx === idx;
               const isDragOver = dragOverIdx === idx;
@@ -308,9 +308,9 @@ function Step1Facility({
             <div className="flex flex-col gap-2" role="group" aria-label="Dostępne placówki do wybrania">
               {availableFacilities.map((f) => (
                 <button
-                  key={f.id}
+                  key={f.id_institution}
                   type="button"
-                  onClick={() => addFacility(String(f.id), f.name)}
+                  onClick={() => addFacility(String(f.id_institution), f.name)}
                   className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-pink-400 hover:bg-pink-50 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 group"
                   aria-label={`Dodaj ${f.name} do listy`}
                 >
