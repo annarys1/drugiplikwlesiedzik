@@ -42,19 +42,16 @@ const MOCK_APPLICATIONS: Application[] = [
     priority: 1,
     attachments: [
       { id: 'a1', name: 'Dokument1.pdf', size: '1.2 MB', type: 'pdf' },
-      { id: 'a2', name: 'Dokument2.pdf', size: '0.8 MB', type: 'pdf' },
     ],
-  },
-
   },
 ];
 
 // --- Konfiguracja statusów ---
 const STATUS_CONFIG: Record<ApplicationStatus, { label: string; color: string; dot: string }> = {
-  nowy:         { label: 'Nowy',         color: 'bg-blue-100 text-blue-800',   dot: 'bg-blue-500' },
-  weryfikacja:  { label: 'Weryfikacja',  color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
-  zaakceptowany:{ label: 'Zaakceptowany',color: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
-  odrzucony:    { label: 'Odrzucony',    color: 'bg-red-100 text-red-800',     dot: 'bg-red-500' },
+  nowy:          { label: 'Nowy',          color: 'bg-blue-100 text-blue-800',    dot: 'bg-blue-500' },
+  weryfikacja:   { label: 'Weryfikacja',   color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
+  zaakceptowany: { label: 'Zaakceptowany', color: 'bg-green-100 text-green-800',  dot: 'bg-green-500' },
+  odrzucony:     { label: 'Odrzucony',     color: 'bg-red-100 text-red-800',      dot: 'bg-red-500' },
 };
 
 // --- Ikona załącznika ---
@@ -107,22 +104,12 @@ function ApplicationModal({
       aria-labelledby={modalTitleId}
       onKeyDown={handleKeyDown}
     >
-      {/* Overlay */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Okno modala */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Nagłówek */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
           <div>
             <p className="text-xs text-gray-400 font-mono">Wniosek {app.id}</p>
-            <h2 id={modalTitleId} className="text-lg font-bold text-gray-800">
-              {app.childName}
-            </h2>
+            <h2 id={modalTitleId} className="text-lg font-bold text-gray-800">{app.childName}</h2>
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge status={app.status} />
@@ -139,7 +126,6 @@ function ApplicationModal({
         </div>
 
         <div className="px-6 py-5 flex flex-col gap-5">
-          {/* Dane dziecka */}
           <section aria-labelledby="section-child">
             <h3 id="section-child" className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Dane dziecka</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -151,7 +137,6 @@ function ApplicationModal({
             </div>
           </section>
 
-          {/* Dane rodzica */}
           <section aria-labelledby="section-parent">
             <h3 id="section-parent" className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Dane rodzica/opiekuna</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -161,7 +146,6 @@ function ApplicationModal({
             </div>
           </section>
 
-          {/* Załączniki */}
           <section aria-labelledby="section-attachments">
             <h3 id="section-attachments" className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
               Załączniki ({app.attachments.length})
@@ -179,10 +163,7 @@ function ApplicationModal({
                       type="button"
                       aria-label={`Pobierz ${att.name}`}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-pink-700 bg-pink-50 hover:bg-pink-100 rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
-                      onClick={() => {
-                        // TODO: podłączyć pod endpoint /api/attachments/:id/download
-                        console.log('Pobieranie:', att.name);
-                      }}
+                      onClick={() => console.log('Pobieranie:', att.name)}
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -197,7 +178,6 @@ function ApplicationModal({
             )}
           </section>
 
-          {/* Notatki */}
           {app.notes && (
             <section aria-labelledby="section-notes">
               <h3 id="section-notes" className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Notatki</h3>
@@ -205,7 +185,6 @@ function ApplicationModal({
             </section>
           )}
 
-          {/* Zmiana statusu */}
           <section aria-labelledby="section-status" className="border-t border-gray-100 pt-5">
             <h3 id="section-status" className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Zmień status wniosku</h3>
             <div className="flex flex-wrap gap-2">
@@ -237,10 +216,7 @@ function ApplicationModal({
             </div>
           </section>
 
-          {/* Metadane */}
-          <p className="text-xs text-gray-300 text-right">
-            Złożono: {app.submittedAt}
-          </p>
+          <p className="text-xs text-gray-300 text-right">Złożono: {app.submittedAt}</p>
         </div>
       </div>
     </div>
@@ -256,7 +232,6 @@ export default function FacilityDashboard() {
   const searchId = useId();
   const filterStatusId = useId();
 
-  // Statystyki
   const stats = {
     total: applications.length,
     nowe: applications.filter(a => a.status === 'nowy').length,
@@ -265,7 +240,6 @@ export default function FacilityDashboard() {
     odrzucone: applications.filter(a => a.status === 'odrzucony').length,
   };
 
-  // Filtrowanie
   const filtered = applications.filter(app => {
     const matchStatus = filterStatus === 'wszystkie' || app.status === filterStatus;
     const matchSearch = !search.trim() ||
@@ -276,11 +250,8 @@ export default function FacilityDashboard() {
     return matchStatus && matchSearch;
   });
 
-  // Zmiana statusu
   const handleStatusChange = (id: string, status: ApplicationStatus) => {
-    setApplications(prev =>
-      prev.map(a => a.id === id ? { ...a, status } : a)
-    );
+    setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
     setSelectedApp(prev => prev?.id === id ? { ...prev, status } : prev);
   };
 
@@ -291,14 +262,13 @@ export default function FacilityDashboard() {
         <p className="text-gray-500 text-sm mt-1">Przeglądaj wnioski rekrutacyjne i zarządzaj ich statusem.</p>
       </div>
 
-      {/* Statystyki */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6" role="list" aria-label="Podsumowanie wniosków">
         {[
-          { label: 'Wszystkich', value: stats.total, color: 'text-gray-800', bg: 'bg-gray-50 border-gray-200' },
-          { label: 'Nowych', value: stats.nowe, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-100' },
-          { label: 'Weryfikacja', value: stats.weryfikacja, color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-100' },
-          { label: 'Zaakceptowanych', value: stats.zaakceptowane, color: 'text-green-700', bg: 'bg-green-50 border-green-100' },
-          { label: 'Odrzuconych', value: stats.odrzucone, color: 'text-red-700', bg: 'bg-red-50 border-red-100' },
+          { label: 'Wszystkich',     value: stats.total,         color: 'text-gray-800',   bg: 'bg-gray-50 border-gray-200' },
+          { label: 'Nowych',         value: stats.nowe,          color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-100' },
+          { label: 'Weryfikacja',    value: stats.weryfikacja,   color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-100' },
+          { label: 'Zaakceptowanych',value: stats.zaakceptowane, color: 'text-green-700',  bg: 'bg-green-50 border-green-100' },
+          { label: 'Odrzuconych',    value: stats.odrzucone,     color: 'text-red-700',    bg: 'bg-red-50 border-red-100' },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={`${bg} border rounded-xl p-3 flex flex-col gap-0.5`} role="listitem">
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
@@ -307,9 +277,7 @@ export default function FacilityDashboard() {
         ))}
       </div>
 
-      {/* Filtry */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row gap-3">
-        {/* Szukaj */}
         <div className="flex-1">
           <label htmlFor={searchId} className="sr-only">Szukaj wniosku</label>
           <div className="relative">
@@ -326,8 +294,6 @@ export default function FacilityDashboard() {
             />
           </div>
         </div>
-
-        {/* Filtr statusu */}
         <div>
           <label htmlFor={filterStatusId} className="sr-only">Filtruj według statusu</label>
           <select
@@ -344,7 +310,6 @@ export default function FacilityDashboard() {
         </div>
       </div>
 
-      {/* Lista wniosków */}
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
         {filtered.length === 0 ? (
           <div className="py-16 text-center text-gray-400">
@@ -357,10 +322,7 @@ export default function FacilityDashboard() {
         ) : (
           <ul aria-label={`Lista wniosków — ${filtered.length} wyników`}>
             {filtered.map((app, idx) => (
-              <li
-                key={app.id}
-                className={idx < filtered.length - 1 ? 'border-b border-gray-100' : ''}
-              >
+              <li key={app.id} className={idx < filtered.length - 1 ? 'border-b border-gray-100' : ''}>
                 <button
                   type="button"
                   onClick={() => setSelectedApp(app)}
@@ -369,7 +331,6 @@ export default function FacilityDashboard() {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Avatar inicjały */}
                       <div className="w-9 h-9 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center text-sm font-bold flex-shrink-0" aria-hidden="true">
                         {app.childName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                       </div>
@@ -392,7 +353,6 @@ export default function FacilityDashboard() {
                         </div>
                       </div>
                     </div>
-
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <StatusBadge status={app.status} />
                       <svg className="w-4 h-4 text-gray-300 group-hover:text-pink-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -405,8 +365,6 @@ export default function FacilityDashboard() {
             ))}
           </ul>
         )}
-
-        {/* Footer z licznikiem */}
         {filtered.length > 0 && (
           <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400">
             Wyświetlono {filtered.length} z {applications.length} wniosków
@@ -414,7 +372,6 @@ export default function FacilityDashboard() {
         )}
       </div>
 
-      {/* Modal szczegółów */}
       {selectedApp && (
         <ApplicationModal
           app={selectedApp}
