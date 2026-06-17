@@ -1,0 +1,56 @@
+import { Router } from 'express';
+import multer from 'multer'; 
+import { authenticateToken } from '../middleware/authMiddleware';
+import { checkRole } from '../middleware/roleMiddleware';
+
+
+import { createApplication, updateApplicationStatus } from '../controllers/applicationController';
+import { saveDraft, getDraft, submitApplication } from '../controllers/applicationDraftController';
+import { savePreferences } from '../controllers/applicationPreferencesController';
+import { uploadDocument } from '../controllers/documentController'; 
+
+// KONFIGURACJA MULTERA (DLA PLIKÓW)
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Pliki będą lądować w folderze 
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}_${file.originalname}`); // Unikalna nazwa pliku
+  }
+});
+
+const upload = multer({ storage: storage });
+
+const router = Router();
+
+
+// TRASY DLA RODZICA (Wymagają tylko zalogowania)
+
+
+// 1. Automatyczne obliczanie punktów i składanie wniosku
+router.post('/apply', authenticateToken as any, createApplication);
+
+// 2. Zapis wersji roboczej / przechodzenie między krokami 
+router.post('/draft', authenticateToken as any, saveDraft);
+
+// 3. Pobieranie zapisanego szkicu formularza 
+router.get('/draft', authenticateToken as any, getDraft);
+
+// 4. Ostateczne zatwierdzenie konkretnego szkicu 
+router.post('/submit/:id', authenticateToken as any, submitApplication);
+
+// 5. Zapis preferencji wyboru placówek - MAX 3
+router.post('/preferences', authenticateToken as any, savePreferences);
+
+// 6. UPLOAD DOKUMENTU I POWIĄZANIE Z KRYTERIUM 
+router.post('/upload', authenticateToken as any, upload.single('document'), uploadDocument);
+
+
+
+// TRASY DLA ADMINISTRATORA / DYREKTORA
+
+// 7. Zmiana statusu wniosku przez Dyrektora (Panel Administratora)
+router.patch('/status/:id_application', authenticateToken as any, checkRole(['headmaster']), updateApplicationStatus);
+
+export default router;
