@@ -1,13 +1,21 @@
-version: '3.8'
+ersion: '3.8'
 
 services:
   backend:
-    build: .
-    ports:      - "5000:5000"
+    build: ./backend  
+    ports:
+      - "8801:8801" 
     env_file:
       - .env
     depends_on:
       - db
+
+  frontend:
+    build: ./frontend # ścieżka do folderu z frontendem
+    ports:
+      - "8802:8802"
+    depends_on:
+      - backend # frontend startuje po backendzie
 
   db:
     image: mysql:8
