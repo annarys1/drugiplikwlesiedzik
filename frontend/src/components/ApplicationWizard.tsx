@@ -506,7 +506,7 @@ export default function ApplicationWizard() {
         console.error('❌ Błąd pobierania placówek:', err.message);
         setFacilitiesError(err.message ?? 'Nieznany błąd');
         setFacilitiesLoading(false);
-      });
+      });  
   }, []);
 
   const updateForm = (field: StringFields, value: string) => {
