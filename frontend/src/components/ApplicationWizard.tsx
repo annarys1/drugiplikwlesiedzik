@@ -14,6 +14,7 @@ interface FormData {
   address: string;
   parentName: string;
   parentPhone: string;
+  document: File | null; // zalaczniki
 }
 
 // Typ odpowiedzi z GET /api/institution/list
@@ -34,6 +35,7 @@ const INITIAL_FORM: FormData = {
   address: '',
   parentName: '',
   parentPhone: '',
+  document: null,
 };
 
 const MAX_FACILITIES = 3;
@@ -351,16 +353,16 @@ function Step1Facility({
 type StringFields = {
   [K in keyof FormData]: FormData[K] extends string ? K : never;
 }[keyof FormData];
-
 function Step2Child({
   form,
   onChange,
   errors,
 }: {
   form: FormData;
-  onChange: (field: StringFields, value: string) => void;
+  onChange: (field: any, value: any) => void;
   errors: Partial<Record<StringFields, string>>;
 }) {
+  // Funkcja pomocnicza do pól tekstowych
   const field = (
     id: StringFields,
     label: string,
@@ -382,15 +384,9 @@ function Step2Child({
           'w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 transition',
           errors[id] ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white hover:border-gray-400',
         ].join(' ')}
-        aria-invalid={!!errors[id]}
-        aria-describedby={errors[id] ? `${id}-error` : hint ? `${id}-hint` : undefined}
       />
-      {hint && !errors[id] && (
-        <p id={`${id}-hint`} className="text-xs text-gray-400 mt-1">{hint}</p>
-      )}
-      {errors[id] && (
-        <p id={`${id}-error`} className="text-xs text-red-600 mt-1" role="alert">{errors[id]}</p>
-      )}
+      {hint && !errors[id] && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      {errors[id] && <p className="text-xs text-red-600 mt-1" role="alert">{errors[id]}</p>}
     </div>
   );
 
@@ -414,10 +410,26 @@ function Step2Child({
       <p className="text-sm font-semibold text-gray-700 -mb-2">Dane rodzica/opiekuna</p>
       {field('parentName', 'Imię i nazwisko rodzica', 'text', 'np. Jan Kowalski')}
       {field('parentPhone', 'Numer telefonu', 'tel', 'np. 600 123 456')}
+
+      {/* Nowy blok z plikiem */}
+      <div className="mt-2 p-4 border-2 border-dashed border-gray-300 rounded-xl">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Załącz dokument (PDF, PNG, JPG) <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="file"
+          accept=".pdf,.jpg,.png"
+          onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+              onChange('document', e.target.files[0]);
+            }
+          }}
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+        />
+      </div>
     </div>
   );
 }
-
 // --- Krok 3: Podsumowanie ---
 function Step3Summary({ form }: { form: FormData }) {
   return (
@@ -494,7 +506,7 @@ export default function ApplicationWizard() {
         console.error('❌ Błąd pobierania placówek:', err.message);
         setFacilitiesError(err.message ?? 'Nieznany błąd');
         setFacilitiesLoading(false);
-      });
+      });  
   }, []);
 
   const updateForm = (field: StringFields, value: string) => {
@@ -550,6 +562,24 @@ export default function ApplicationWizard() {
   const handleSubmit = async () => {
     setLoading(true);
     setServerError(null);
+
+    // 1. Najpierw upload pliku
+  if (form.document) {
+    const fileData = new FormData();
+    fileData.append('document', form.document);
+
+    const uploadRes = await fetch('/api/upload-doc', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: fileData
+    });
+    
+    if (!uploadRes.ok) {
+      setServerError('Błąd podczas wgrywania dokumentu.');
+      setLoading(false);
+      return;
+    }
+  }
 
     try {
       // Krok 1: Dodaj dziecko — POST /api/children/add

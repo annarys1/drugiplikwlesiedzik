@@ -12,6 +12,13 @@ import healthRoutes from './routes/healthRoutes';
 dotenv.config();
 
 const app = express();
+
+app.use((req, res, next) => {
+  console.log(`-> PRZYCHODZI: ${req.method} ${req.url}`);
+  next();
+});
+
+
 app.use(cors({
   origin: ['http://149.156.194.192:8802', 'http://localhost:8802'], // Twój serwer IP oraz localhost
   credentials: true,                // Zezwolenie na ciasteczka/autoryzację

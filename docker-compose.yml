@@ -1,0 +1,61 @@
+version: "3.3"
+
+services:
+  mysql:
+    image: mariadb:10.3
+    container_name: eduenroll-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: eduenroll
+      MYSQL_USER: phpmyadmin
+      MYSQL_PASSWORD: projekt123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend1
+    container_name: eduenroll-backend
+    restart: always
+    ports:
+      - "8801:8801"
+    volumes:
+      - ./backend1:/app
+      - /app/node_modules
+    env_file:
+      - ./backend1/.env
+    depends_on:
+      - mysql
+    command: ["npx", "ts-node", "--transpile-only", "src/index.ts"]
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: eduenroll-frontend
+    restart: always
+    ports:
+      - "8802:8802"
+    volumes:
+      - ./frontend:/app            
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: eduenroll-phpmyadmin
+    restart: always
+    ports:
+      - "127.0.0.1:8803:80"
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: root123
+      PMA_ABSOLUTE_URI: http://localhost:8803/
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:
