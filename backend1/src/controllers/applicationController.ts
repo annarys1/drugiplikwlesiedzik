@@ -138,3 +138,36 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
     res.status(500).json({ message: 'Błąd serwera' });
   }
 };
+
+export const getParentApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const parentId = req.user?.id; // Pobieramy ID zalogowanego rodzica
+
+    if (!parentId) {
+      res.status(401).json({ message: 'Brak autoryzacji' });
+      return;
+    }
+
+    const [rows]: any = await db.query(
+      `SELECT 
+        a.id_application, 
+        c.first_name, 
+        c.last_name, 
+        a.status,
+        GROUP_CONCAT(CONCAT(ai.preference_order, ': ', i.name) ORDER BY ai.preference_order ASC SEPARATOR ', ') AS chosen_institutions
+       FROM application a
+       JOIN children c ON a.id_children = c.id_children
+       LEFT JOIN application_institutions ai ON a.id_application = ai.id_application
+       LEFT JOIN institution i ON ai.id_institution = i.id_institution
+       WHERE a.id_parent = ? AND a.status != 'draft'
+       GROUP BY a.id_application
+       ORDER BY a.id_application DESC`, 
+      [parentId]
+    );
+
+    res.status(200).json(rows);
+  } catch (error: any) {
+    console.error('Błąd pobierania wniosków rodzica:', error.message);
+    res.status(500).json({ message: 'Błąd serwera podczas pobierania wniosków.' });
+  }
+};

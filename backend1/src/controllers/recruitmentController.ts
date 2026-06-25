@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import db from '../config/db';
+// 1. IMPORTUJEMY FUNKCJĘ Z FOLDERU UTILS (Upewnij się, że nazwa pliku w utils się zgadza)
+import { calculatePointsForInstitution } from '../utils/pointsCalculator'; 
 
 export const runRecruitmentAlgorithm = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const connection = await db.getConnection();
@@ -20,18 +22,51 @@ export const runRecruitmentAlgorithm = async (req: AuthenticatedRequest, res: Re
     }
 
     // 2. Pobieramy wszystkie wnioski, które zostały złożone (status 'submitted')
+    // Usuwamy stąd błędne ORDER BY, bo tabela 'application' nie ma tej kolumny
     const [applications]: any = await connection.query(
-    `SELECT id_application, id_children 
-    FROM application 
-    WHERE status = 'submitted' 
-    ORDER BY calculated_points DESC` 
+      "SELECT id_application, id_children FROM application WHERE status = 'submitted'"
+    );
+
+    // ================= ETAP 1: PRZELICZANIE PUNKTÓW Z UTILS =================
+    // Przechodzimy przez każdy wniosek i za pomocą funkcji z utils obliczamy punkty dla każdej wybranej placówki
+    for (const app of applications) {
+      const [preferences]: any = await connection.query(
+        "SELECT id_institution FROM application_institutions WHERE id_application = ?",
+        [app.id_application]
+      );
+
+      for (const pref of preferences) {
+        // Wywołanie funkcji z folderu utils, którą mi pokazałaś wcześniej!
+        const points = await calculatePointsForInstitution(connection, app.id_application, pref.id_institution);
+        
+        // Zapisujemy wyliczone punkty w bazie danych (w tabeli powiązań)
+        await connection.query(
+          `UPDATE application_institutions 
+           SET calculated_points = ? 
+           WHERE id_application = ? AND id_institution = ?`,
+          [points, app.id_application, pref.id_institution]
+        );
+      }
+    }
+    // =====================================================================
+
+
+    // ================= ETAP 2: PRZYDZIAŁ MIEJSC (SPRAWIEDLIWY) =================
+    // Pobieramy wnioski posortowane po maksymalnej liczbie punktów, jaką dziecko zdobyło w JAKIEJKOLWIEK placówce.
+    // Dzięki temu dzieci z najwyższymi wynikami w systemie są rozpatrywane jako pierwsze!
+    const [sortedApplications]: any = await connection.query(
+      `SELECT a.id_application, a.id_children, MAX(ai.calculated_points) as max_points
+       FROM application a
+       JOIN application_institutions ai ON a.id_application = ai.id_application
+       WHERE a.status = 'submitted'
+       GROUP BY a.id_application
+       ORDER BY max_points DESC`
     );
 
     const results = [];
 
-    for (const app of applications) {
-      // Pobieramy preferencje kandydata, ale sortujemy je według obliczonych dedykowanych punktów (od najwyższej liczby)
-      // W przypadku remisu punktowego, decyduje wyższy priorytet ustawiony przez rodzica (preference_order)
+    for (const app of sortedApplications) {
+      // Pobieramy preferencje kandydata posortowane od placówki, gdzie ma najwięcej punktów
       const [preferences]: any = await connection.query(
         `SELECT id_institution, preference_order, calculated_points 
          FROM application_institutions 
@@ -57,7 +92,7 @@ export const runRecruitmentAlgorithm = async (req: AuthenticatedRequest, res: Re
         }
       }
 
-      // Jeśli zabrakło miejsc we wszystkich 3 wybranych placówkach
+      // Jeśli zabrakło miejsc we wszystkich wybranych placówkach
       if (!allocated) {
         await connection.query(
           "UPDATE application SET status = 'rejected' WHERE id_application = ?",

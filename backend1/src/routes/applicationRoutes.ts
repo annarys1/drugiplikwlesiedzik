@@ -8,7 +8,7 @@ import { runRecruitmentAlgorithm } from '../controllers/recruitmentController';
 import { saveDraft, getDraft, submitApplication } from '../controllers/applicationDraftController';
 import { savePreferences } from '../controllers/applicationPreferencesController';
 import { uploadDocument } from '../controllers/documentController'; 
-import { createApplication, updateApplicationStatus, getDirectorApplications } from '../controllers/applicationController';
+import { createApplication, updateApplicationStatus, getDirectorApplications, getParentApplications } from '../controllers/applicationController';
 // ... reszta kodu ...
 // KONFIGURACJA MULTERA (DLA PLIKÓW)
 
@@ -49,6 +49,7 @@ router.post('/upload', authenticateToken as any, upload.single('document'), uplo
 
 router.get('/director/applications', authenticateToken as any, checkRole(['headmaster']), getDirectorApplications);
 
+router.get('/my-applications', authenticateToken as any, getParentApplications);
 
 // 7. Zmiana statusu wniosku przez Dyrektora 
 router.patch('/status/:id_application', authenticateToken as any, checkRole(['headmaster']), updateApplicationStatus);
