@@ -563,24 +563,6 @@ export default function ApplicationWizard() {
     setLoading(true);
     setServerError(null);
 
-    // 1. Najpierw upload pliku
-  if (form.document) {
-    const fileData = new FormData();
-    fileData.append('document', form.document);
-
-    const uploadRes = await fetch('/api/upload-doc', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: fileData
-    });
-    
-    if (!uploadRes.ok) {
-      setServerError('Błąd podczas wgrywania dokumentu.');
-      setLoading(false);
-      return;
-    }
-  }
-
     try {
       // Krok 1: Dodaj dziecko — POST /api/children/add
       const childData = {
@@ -608,6 +590,7 @@ export default function ApplicationWizard() {
 
       if (!childRes.ok) {
         setServerError(childJson.message || 'Błąd podczas dodawania dziecka.');
+        setLoading(false);
         return;
       }
 
@@ -629,6 +612,7 @@ export default function ApplicationWizard() {
 
       if (!appRes.ok) {
         setServerError(appJson.message || 'Błąd podczas składania wniosku.');
+        setLoading(false);
         return;
       }
 
@@ -655,10 +639,41 @@ export default function ApplicationWizard() {
 
       if (!prefRes.ok) {
         setServerError(prefJson.message || 'Błąd podczas zapisywania preferencji.');
+        setLoading(false);
         return;
       }
 
-      console.log('✅ Wniosek złożony pomyślnie!');
+      // Krok 4: Upload pliku (Przeniesiony TUTAJ, bo teraz mamy już applicationId)
+      // Krok 4: Upload pliku 
+      if (form.document) {
+        const fileData = new FormData();
+        fileData.append('document', form.document);
+        fileData.append('id_application', String(applicationId));
+        fileData.append('id_criterion', '1'); 
+
+        console.log('📤 Przesyłam plik do backendu dla wniosku:', applicationId);
+
+        // ZMIENIONY ADRES TUTAJ:
+        const uploadRes = await fetch('/api/applications/upload', {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}` 
+            // WAŻNE: Nie dodajemy tutaj 'Content-Type'
+          },
+          body: fileData
+        });
+        
+        const uploadJson = await uploadRes.json();
+        console.log('📥 Odpowiedź z uploadu:', uploadJson);
+
+        if (!uploadRes.ok) {
+          setServerError(uploadJson.message || 'Błąd podczas wgrywania dokumentu.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      console.log('✅ Wniosek oraz pliki złożone pomyślnie!');
       setSubmitted(true);
 
     } catch (error) {

@@ -74,19 +74,20 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
       return;
     }
 
-
-
-
-
-
-
-    // Wstawiamy dane do bazy zachowując nazwy z Twojego screena (id_rodzica, surename)
-    await db.query(
+   const [result]: any = await db.query(
       'INSERT INTO children (id_rodzica, name, surname, pesel, date_birth, domicile) VALUES (?, ?, ?, ?, ?, ?)',
       [parentId, childName, childSurname, peselHash, date_birth, domicile]
     );
 
-    res.status(201).json({ message: 'Dziecko zostało pomyślnie dodane do systemu!' });
+  
+    const newChildId = result.insertId;
+
+   
+    res.status(201).json({ 
+      message: 'Dziecko zostało pomyślnie dodane do systemu!',
+      childId: newChildId 
+    });
+    
  } catch (error: any) {
   console.log("--- BŁĄD SERWERA ---");
   console.log(error); 

@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 
 
 app.use(cors({
-  origin: ['http://149.156.194.192:8802', 'http://localhost:8802'], // Twój serwer IP oraz localhost
+  origin: ['http://149.156.194.192:8802', 'http://localhost:8802', 'http://localhost:56322'], // Twój serwer IP oraz localhost
   credentials: true,                // Zezwolenie na ciasteczka/autoryzację
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Dozwolone metody
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'], // Dozwolone nagłówki

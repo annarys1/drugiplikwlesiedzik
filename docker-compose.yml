@@ -1,4 +1,4 @@
-version: "3.3"
+version: "2.4"
 
 services:
   mysql:
@@ -30,6 +30,8 @@ services:
     depends_on:
       - mysql
     command: ["npx", "ts-node", "--transpile-only", "src/index.ts"]
+    cpus: 1.20
+    mem_limit: 350m
 
   frontend:
     build:
@@ -43,7 +45,9 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-
+    cpus: 1.20
+    mem_limit: 350m
+          
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: eduenroll-phpmyadmin
