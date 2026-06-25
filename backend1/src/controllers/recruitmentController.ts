@@ -21,7 +21,10 @@ export const runRecruitmentAlgorithm = async (req: AuthenticatedRequest, res: Re
 
     // 2. Pobieramy wszystkie wnioski, które zostały złożone (status 'submitted')
     const [applications]: any = await connection.query(
-      "SELECT id_application, id_children FROM application WHERE status = 'submitted'"
+    `SELECT id_application, id_children 
+    FROM application 
+    WHERE status = 'submitted' 
+    ORDER BY calculated_points DESC` 
     );
 
     const results = [];

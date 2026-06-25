@@ -5,9 +5,7 @@ import db from '../config/db';
 export const createApplication = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const connection = await db.getConnection();
   try {
-    // Oczekujemy struktury body z frontendu: 
-    // { id_children: 1, selectedCriteria: [{ id_criterion: 32, declared_value: 8 }, { id_criterion: 5, declared_value: 0 }] }
-    const { id_children, selectedCriteria } = req.body;
+    const { id_children, selectedInstitutions, selectedCriteria } = req.body;
     const parentId = req.user?.id;
 
     if (!id_children) {
@@ -17,7 +15,7 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
 
     await connection.beginTransaction();
 
-    // 1. Sprawdzenie duplikatu - czy dziecko nie ma już aktywnego wniosku
+    // 1. Sprawdzenie duplikatu
     const [existing]: any = await connection.query(
         "SELECT id_application FROM application WHERE id_children = ? AND status != 'rejected'",
         [id_children]
@@ -28,7 +26,7 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
         return;
     }
 
-    // 2. Wstawienie wniosku ogólnego (punkty startowe = 0, placówka docelowa = NULL na start)
+    // 2. Wstawienie wniosku ogólnego
     const [result]: any = await connection.query(
       'INSERT INTO application (id_parent, id_children, id_institution, status) VALUES (?, ?, NULL, ?)',
       [parentId, id_children, 'submitted']
@@ -36,7 +34,21 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
 
     const applicationId = result.insertId;
 
-    // 3. Powiązanie wybranych kryteriów wraz z zadeklarowaną wartością (godzinami) do nowej tabeli application_criteria
+    // 3. Zapisanie wybranych placówek (preferencji)
+    if (selectedInstitutions && selectedInstitutions.length > 0) {
+      const instValues = selectedInstitutions.map((id_inst: number, index: number) => [
+        applicationId, 
+        id_inst, 
+        index + 1
+      ]);
+
+      await connection.query(
+        'INSERT INTO application_institutions (id_application, id_institution, preference_order) VALUES ?', 
+        [instValues]
+      );
+    }
+
+    // 4. Powiązanie wybranych kryteriów wraz z zadeklarowaną wartością
     if (selectedCriteria && selectedCriteria.length > 0) {
       const values = selectedCriteria.map((c: any) => [applicationId, c.id_criterion, c.declared_value || 0]);
       await connection.query(
@@ -53,6 +65,38 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
     res.status(500).json({ message: 'Błąd serwera podczas składania wniosku.' });
   } finally {
     connection.release();
+  }
+};
+
+
+export const getDirectorApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const directorId = req.user?.id;
+
+    if (!directorId) {
+      res.status(401).json({ message: 'Brak autoryzacji' });
+      return;
+    }
+
+    const [rows]: any = await db.query(
+      `SELECT 
+        a.id_application, 
+        c.first_name, 
+        c.last_name, 
+        a.status AS application_status,
+        ai.preference_order
+       FROM application a
+       JOIN children c ON a.id_children = c.id_children
+       JOIN application_institutions ai ON a.id_application = ai.id_application
+       JOIN institution i ON ai.id_institution = i.id_institution
+       WHERE i.id_headmaster = ? AND a.status != 'draft'
+       ORDER BY a.id_application DESC`, 
+      [directorId]
+    );
+    res.status(200).json(rows);
+  } catch (error: any) {
+    console.error('Błąd pobierania wniosków dla dyrektora:', error.message);
+    res.status(500).json({ message: 'Błąd serwera podczas pobierania wniosków.' });
   }
 };
 

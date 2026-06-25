@@ -4,11 +4,12 @@ import { authenticateToken } from '../middleware/authMiddleware';
 import { checkRole } from '../middleware/roleMiddleware';
 import { runRecruitmentAlgorithm } from '../controllers/recruitmentController';
 
-import { createApplication, updateApplicationStatus } from '../controllers/applicationController';
+
 import { saveDraft, getDraft, submitApplication } from '../controllers/applicationDraftController';
 import { savePreferences } from '../controllers/applicationPreferencesController';
 import { uploadDocument } from '../controllers/documentController'; 
-
+import { createApplication, updateApplicationStatus, getDirectorApplications } from '../controllers/applicationController';
+// ... reszta kodu ...
 // KONFIGURACJA MULTERA (DLA PLIKÓW)
 
 const storage = multer.diskStorage({
@@ -46,7 +47,7 @@ router.post('/preferences', authenticateToken as any, savePreferences);
 // 6. UPLOAD DOKUMENTU I POWIĄZANIE Z KRYTERIUM 
 router.post('/upload', authenticateToken as any, upload.single('document'), uploadDocument);
 
-
+router.get('/director/applications', authenticateToken as any, checkRole(['headmaster']), getDirectorApplications);
 
 
 // 7. Zmiana statusu wniosku przez Dyrektora 
