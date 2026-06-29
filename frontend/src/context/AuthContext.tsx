@@ -1,5 +1,6 @@
-/*import { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
+// 1. Definiujemy, jak wygląda użytkownik
 interface User {
   id: number;
   email: string;
@@ -8,111 +9,10 @@ interface User {
   role: string;
 }
 
+// 2. Definiujemy, co udostępnia nasz kontekst
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  login: (credentials: any) => Promise<boolean>;
-  logout: () => void;
   isLoading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let savedUser = localStorage.getItem('user');
-    let savedToken = localStorage.getItem('token');
-
-    // Jeśli tokenu nie ma - ustaw mock token (do testowania)
-    if (!savedToken) {
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIiwicm9sZSI6InBhcmVudHMifQ.test';
-      const mockUser = {
-        id: 1,
-        email: "test@test.com",
-        firstName: "Test",
-        lastName: "User",
-        role: "parents"
-      };
-      
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      savedToken = mockToken;
-      savedUser = JSON.stringify(mockUser);
-      
-      console.log('✅ Mock token ustawiony w AuthContext');
-    }
-
-    if (savedUser && savedToken) {
-      setUser(JSON.parse(savedUser));
-      setToken(savedToken);
-    }
-    
-    setIsLoading(false);
-  }, []);
-
-  const login = async (credentials: any) => {
-    try {
-      const response = await fetch('http://149.156.194.192:8803/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        console.error("Błąd logowania: Serwer zwrócił status", response.status);
-        return false;
-      }
-
-      const data = await response.json();
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      setUser(data.user);
-      setToken(data.token);
-      return true;
-
-    } catch (error) {
-      console.error("Błąd połączenia z backendem. Czy serwer działa?", error);
-      return false;
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
-      {!isLoading && children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth musi być użyty wewnątrz AuthProvider");
-  }
-  return context;
-};
-*/
-import { createContext, useContext, useState, type ReactNode } from 'react';
-
-interface AuthContextType {
-  user: { id: number; email: string; firstName: string; lastName: string; role: string; } | null;
-  isLoading: boolean;
-  // Funkcja logowania, którą wywołasz w Login.tsx
   login: (credentials: any) => Promise<{ success: boolean; role?: string; message?: string }>;
   token: string | null;
   logout: () => void;
@@ -121,11 +21,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Pobieramy token i usera z localStorage na starcie aplikacji
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  
+  const [isLoading, setIsLoading] = useState(false);
 
   const login = async (credentials: any) => {
     try {
-      // Zakładamy endpoint, o który pytałaś
       const response = await fetch('http://localhost:8801/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,11 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (response.ok) {
-        // Tu backend musi zwrócić token i rolę
+        // Zapisujemy token ORAZ dane użytkownika w przeglądarce
         localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Aktualizujemy stan aplikacji
         setToken(data.token);
+        setUser(data.user);
+        
+        // Zwracamy rolę do Login.tsx, żeby wiedział, gdzie przekierować!
         return { success: true, role: data.user.role };
       }
+      
       return { success: false, message: data.message || 'Błąd logowania' };
     } catch (err) {
       return { success: false, message: 'Błąd połączenia z serwerem' };
@@ -148,11 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setToken(null);
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user: null, isLoading: false, login, token, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, token, logout }}>
       {children}
     </AuthContext.Provider>
   );

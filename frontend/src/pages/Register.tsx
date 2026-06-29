@@ -52,7 +52,7 @@ export default function Register() {
 
     setIsSubmitting(true);
     try {
-      // Uwaga: Upewnij się, że backend przyjmuje 'role' jako 'parents'
+      
       const res = await fetch('http://localhost:8801/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
