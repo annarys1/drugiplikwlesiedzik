@@ -113,3 +113,24 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Błąd serwera podczas logowania.' });
   }
 };
+
+export const getMe = async (req: any, res: Response): Promise<void> => {
+  try {
+    const userId = req.user.id; // ID wyciągnięte z middleware authenticateToken
+
+    const [users]: any = await db.query(
+      'SELECT id_user, email, name, surname, role FROM user WHERE id_user = ?', 
+      [userId]
+    );
+
+    if (users.length === 0) {
+      res.status(404).json({ message: 'Użytkownik nie znaleziony.' });
+      return;
+    }
+
+    res.status(200).json(users[0]);
+  } catch (error: any) {
+    console.error('Błąd pobierania profilu:', error.message);
+    res.status(500).json({ message: 'Błąd serwera.' });
+  }
+};

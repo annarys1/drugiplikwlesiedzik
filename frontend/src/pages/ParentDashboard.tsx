@@ -109,17 +109,22 @@ export default function ParentDashboard() {
 
         {/* Karta: Profil (placeholder na przyszłość) */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4">
-          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="font-semibold text-gray-800">Mój profil</h2>
-            <p className="text-sm text-gray-500 mt-1">Zarządzaj swoimi danymi kontaktowymi i danymi dzieci.</p>
-          </div>
-          <span className="mt-auto text-xs text-gray-400 italic">Wkrótce dostępne</span>
-        </div>
+  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  </div>
+  <div>
+    <h2 className="font-semibold text-gray-800">Mój profil</h2>
+    <p className="text-sm text-gray-500 mt-1">Zarządzaj swoimi danymi kontaktowymi.</p>
+  </div>
+  <button
+    onClick={() => navigate('/panel/rodzic/profil')}
+    className="mt-auto px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-green-400"
+  >
+    Przejdź do profilu →
+  </button>
+</div>
       </div>
     </div>
   );

@@ -643,8 +643,7 @@ export default function ApplicationWizard() {
         return;
       }
 
-      // Krok 4: Upload pliku (Przeniesiony TUTAJ, bo teraz mamy już applicationId)
-      // Krok 4: Upload pliku 
+     
       if (form.document) {
         const fileData = new FormData();
         fileData.append('document', form.document);
@@ -653,12 +652,10 @@ export default function ApplicationWizard() {
 
         console.log('📤 Przesyłam plik do backendu dla wniosku:', applicationId);
 
-        // ZMIENIONY ADRES TUTAJ:
         const uploadRes = await fetch('/api/applications/upload', {
           method: 'POST',
           headers: { 
             'Authorization': `Bearer ${token}` 
-            // WAŻNE: Nie dodajemy tutaj 'Content-Type'
           },
           body: fileData
         });
