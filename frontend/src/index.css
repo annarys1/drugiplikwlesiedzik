@@ -12,3 +12,85 @@ body {
   outline: 3px solid #db2777;
   outline-offset: 2px;
 }
+
+/* ============================================
+   WYSOKI KONTRAST (WCAG 2.1) — tryb włączany przełącznikiem
+   ============================================ */
+
+/* Cały kolorowy tekst -> czarny, niezależnie od odcienia */
+html.high-contrast [class*="text-pink-"],
+html.high-contrast [class*="text-gray-"],
+html.high-contrast [class*="text-blue-"],
+html.high-contrast [class*="text-green-"],
+html.high-contrast [class*="text-red-"],
+html.high-contrast [class*="text-yellow-"] {
+  color: #000000 !important;
+}
+
+/* Wszystkie kolorowe ramki -> czarne */
+html.high-contrast [class*="border-pink-"],
+html.high-contrast [class*="border-gray-"],
+html.high-contrast [class*="border-blue-"],
+html.high-contrast [class*="border-green-"],
+html.high-contrast [class*="border-red-"],
+html.high-contrast [class*="border-yellow-"] {
+  border-color: #000000 !important;
+}
+
+/* Strona i białe karty -> zostają jasne, czarny tekst już ustawiony wyżej */
+html.high-contrast body,
+html.high-contrast .bg-white,
+html.high-contrast .bg-gray-50,
+html.high-contrast .bg-\[\#efb7cd\] {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Jasne tła (odznaki statusów, kafelki info) -> białe + czarna ramka,
+   żeby rozróżnienie nie zależało tylko od koloru (WCAG 1.4.1) */
+html.high-contrast .bg-pink-50,
+html.high-contrast .bg-pink-100,
+html.high-contrast .bg-pink-200,
+html.high-contrast .bg-blue-50,
+html.high-contrast .bg-blue-100,
+html.high-contrast .bg-green-50,
+html.high-contrast .bg-green-100,
+html.high-contrast .bg-yellow-50,
+html.high-contrast .bg-yellow-100,
+html.high-contrast .bg-red-50,
+html.high-contrast .bg-red-100,
+html.high-contrast .bg-gray-100 {
+  background-color: #ffffff !important;
+  border: 2px solid #000000 !important;
+}
+
+/* Kropki-wskaźniki statusu -> czarne (rozróżnia je już etykieta tekstowa) */
+html.high-contrast .bg-blue-500,
+html.high-contrast .bg-green-500,
+html.high-contrast .bg-yellow-500,
+html.high-contrast .bg-red-500 {
+  background-color: #000000 !important;
+}
+
+/* Mocne przyciski akcji -> czarne tło (biały tekst już jest ustawiony klasą text-white) */
+html.high-contrast .bg-pink-600,
+html.high-contrast .bg-pink-700,
+html.high-contrast .bg-pink-800,
+html.high-contrast .bg-pink-900,
+html.high-contrast .bg-blue-600,
+html.high-contrast .bg-blue-700,
+html.high-contrast .bg-green-600 {
+  background-color: #000000 !important;
+}
+
+/* Mocniejszy fokus klawiatury w trybie kontrastu */
+html.high-contrast *:focus-visible {
+  outline: 4px solid #000000 !important;
+  outline-offset: 2px !important;
+}
+
+/* Linki — dodatkowe podkreślenie, nie tylko kolor */
+html.high-contrast a {
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+}
