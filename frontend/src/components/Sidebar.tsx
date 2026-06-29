@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ContrastToggle from './ContrastToggle';
 
 interface NavItem {
   to: string;
@@ -66,6 +67,11 @@ export default function Sidebar() {
         )}
       </div>
 
+      {/* Przełącznik wysokiego kontrastu (WCAG 2.1) */}
+      <div className="px-3 py-3 border-b border-pink-100">
+        <ContrastToggle />
+      </div>
+
       {/* Nawigacja — rośnie i wypycha logout na dół */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1" aria-label="Menu główne">
         {NAV_ITEMS.map(({ to, label, icon }) => (
@@ -81,7 +87,6 @@ export default function Sidebar() {
                   : 'text-gray-600 hover:bg-pink-50 hover:text-pink-700',
               ].join(' ')
             }
-//            aria-current={({ isActive }: { isActive: boolean }) => (isActive ? 'page' : undefined) as any}
           >
             {icon}
             <span>{label}</span>

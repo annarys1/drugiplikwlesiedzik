@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import MainLayout from './layouts/MainLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/Home';
@@ -36,8 +37,10 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
