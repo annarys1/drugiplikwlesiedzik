@@ -1,6 +1,37 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import api from '../api/axios';
 
 export default function Home() {
+  const [institutions, setInstitutions] = useState([]);
+  const [criteria, setCriteria] = useState([]);
+  const [loading, setLoading] = useState(true);
+useEffect(() => {
+  const fetchData = async () => {
+
+    try {
+      const instRes = await api.get('/institution/list');
+      setInstitutions(instRes.data);
+
+    } catch (error) {
+      console.error("Błąd pobierania placówek:", error);
+    }
+
+
+    try {
+      const critRes = await api.get('/public/criteria');
+      setCriteria(critRes.data);
+
+    } catch (error) {
+      console.error("Błąd pobierania kryteriów:", error);
+    }
+
+
+    setLoading(false);
+  };
+
+  fetchData();
+}, []);
+
   return (
     <main>
 
@@ -24,66 +55,45 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-gray-50">
-  <div className="max-w-6xl mx-auto">
+     <section className="py-16 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-10">Dostępne placówki</h2>
 
-    <h2 className="text-3xl font-bold text-center mb-10">
-      Dostępne placówki
-    </h2>
+          {loading ? (
+            <p className="text-center">Ładowanie danych...</p>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6">
+              {institutions.map((inst) => (
+                <div key={inst.id_institution} className="bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                  <h3 className="font-bold text-xl mb-2">{inst.name}</h3>
+                  <p className="text-gray-600 mb-2">{inst.city}</p>
+                  <p className="text-sm">
+                    Maks. miejsc: <b>{inst.max_capacity}</b>
+                  </p>
 
-    <div className="grid md:grid-cols-3 gap-6">
-
-      <div className="bg-white border rounded-xl p-6 shadow-sm">
-        <h3 className="font-bold text-xl mb-2">
-          Przedszkole nr 1
-        </h3>
-
-        <p className="text-gray-600">
-          Kraków
-        </p>
-
-        <p className="mt-2">
-          Maks. miejsc: <b>50</b>
-        </p>
-
-      </div>
-
-
-      <div className="bg-white border rounded-xl p-6 shadow-sm">
-        <h3 className="font-bold text-xl mb-2">
-          Przedszkole Samorządowe w Biskupicach
-        </h3>
-
-        <p className="text-gray-600">
-          Biskupice
-        </p>
-
-        <p className="mt-2">
-          Maks. miejsc: <b>20</b>
-        </p>
-
-      </div>
-
-
-      <div className="bg-white border rounded-xl p-6 shadow-sm">
-        <h3 className="font-bold text-xl mb-2">
-          Przedszkole Samorządowe w Trąbkach
-        </h3>
-
-        <p className="text-gray-600">
-          Trąbki
-        </p>
-
-        <p className="mt-2">
-          Maks. miejsc: <b>70</b>
-        </p>
-
-      </div>
-
-    </div>
-
-  </div>
-</section>
+                  {/* Dynamiczne kryteria: globalne + lokalne dla placówki */}
+                  <div className="mt-4 pt-4 border-t">
+                    <h4 className="font-bold text-sm text-pink-700 uppercase mb-2">Kryteria rekrutacji:</h4>
+                    <ul className="space-y-1">
+                      {criteria
+                        .filter((c) => c.id_institution === inst.id_institution || c.type === 'global')
+                        .map((c) => (
+                          <li key={c.id_criterion} className="flex justify-between text-sm bg-gray-50 p-1 px-2 rounded">
+                            <span>
+                              {c.name}
+                              {c.is_variable === 1 && <span className="ml-1 text-[10px] text-gray-400">(zmienne)</span>}
+                            </span>
+                            <span className="font-bold text-pink-600">{c.criterion_point} pkt</span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
 
       {/* Aktualna rekrutacja */}

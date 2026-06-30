@@ -8,6 +8,7 @@ import institutionRoutes from './routes/institutionRoutes';
 import applicationRoutes from './routes/applicationRoutes';
 import healthRoutes from './routes/healthRoutes';
 import headmasterRoutes from './routes/headmasterRoutes';
+import criteriaRoutes from './routes/criteriaRoutes'
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(cors({
 const PORT = process.env.PORT || 8801;
 
 
+
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/children', childrenRoutes);
@@ -37,7 +39,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/headmaster', headmasterRoutes);
 
 app.use('/api', healthRoutes);
-
+app.use('/api/criteria', criteriaRoutes);
 
 app.get('/', (req, res) => {
   res.send('System rekrutacji EduEnroll działa pomyślnie!');

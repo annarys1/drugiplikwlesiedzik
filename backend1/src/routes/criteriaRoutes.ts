@@ -23,3 +23,10 @@ router.post('/upload-doc', authenticateToken, upload.single('document'), (req, r
 });
 
 export default router;
+import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
+
+// Ścieżka publiczna (brak authMiddleware)
+router.get('/public/criteria', getAllCriteriaPublic);
+
+// Ścieżka zabezpieczona (z authMiddleware)
+router.get('/headmaster/criteria', authMiddleware, getHeadmasterCriteria);

@@ -8,4 +8,5 @@ const router = Router();
 
 router.post('/add', authenticateToken as any, checkRole(['admin']), addInstitution);
 router.get('/', getInstitutions);
+
 export default router;

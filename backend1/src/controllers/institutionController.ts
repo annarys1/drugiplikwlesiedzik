@@ -19,6 +19,8 @@ export const addInstitution = async (req: AuthenticatedRequest, res: Response): 
   try {
     const { name, city, max_capacity } = req.body;
 
+    const capacity = Number(max_capacity);
+
     if (!name || !city || !max_capacity) {
       res.status(400).json({ message: 'Wszystkie pola są wymagane!' });
       return;
@@ -32,13 +34,13 @@ export const addInstitution = async (req: AuthenticatedRequest, res: Response): 
     }
 
     await db.query(
-      'INSERT INTO institution (name, city, max_capacity, id_headmaster) VALUES (?, ?, ?, ?)',
-      [name, city, max_capacity, null] 
-    );
+    'INSERT INTO institution (name, city, max_capacity, id_headmaster) VALUES (?, ?, ?, ?)',
+    [name, city, capacity, null]
+  );
 
     res.status(201).json({ message: 'Placówka została pomyślnie utworzona przez administratora!' });
   } catch (error: any) {
     console.error('Błąd:', error.message);
-    res.status(500).json({ message: 'Błąd serwera.' });
+    res.status(500).json({ message: error.message });
   }
 };
