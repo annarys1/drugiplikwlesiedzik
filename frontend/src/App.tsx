@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import AddHeadmaster from './pages/AddHeadmaster';
 import ProtectedRoute from './components/ProtectedRoute'; 
 
+
 const router = createBrowserRouter([
   // --- STREFA PUBLICZNA (Dostępna dla każdego) ---
   {

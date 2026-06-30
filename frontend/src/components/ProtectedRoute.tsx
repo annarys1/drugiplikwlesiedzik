@@ -33,19 +33,19 @@ const ProtectedRoute = ({ allowedRoles, children }: Props) => {
     );
   }
 
- 
+  // 2. Jeśli nie ma zalogowanego usera -> do logowania (zakładam, że ścieżka to "/")
   if (!user) {
-    return <Navigate to="/logowanie" replace />;
+    return <Navigate to="/" replace />;
   }
 
-
+  // 3. Jeśli rola usera nie zgadza się z wymaganą -> wyślij go na JEGO panel
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     if (user.role === 'admin') return <Navigate to="/panel/gmina" replace />;
     if (user.role === 'headmaster') return <Navigate to="/panel/placowka" replace />;
     return <Navigate to="/panel/rodzic" replace />;
   }
 
-  
+  // 4. Jeśli wszystko jest ok -> pokaż zawartość
   return children ? <>{children}</> : <Outlet />;
 };
 

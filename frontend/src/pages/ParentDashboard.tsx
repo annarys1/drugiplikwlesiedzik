@@ -119,7 +119,7 @@ export default function ParentDashboard() {
     <p className="text-sm text-gray-500 mt-1">Zarządzaj swoimi danymi kontaktowymi.</p>
   </div>
   <button
-    onClick={() => navigate('/panel/rodzic/profil')}
+    onClick={() => navigate('/panel/profil')}
     className="mt-auto px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-green-400"
   >
     Przejdź do profilu →
