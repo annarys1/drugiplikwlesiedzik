@@ -20,10 +20,10 @@ app.use((req, res, next) => {
 
 
 app.use(cors({
-  origin: ['http://149.156.194.192:8802', 'http://localhost:8802', 'http://localhost:56322'], // Twój serwer IP oraz localhost
-  credentials: true,                // Zezwolenie na ciasteczka/autoryzację
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Dozwolone metody
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'], // Dozwolone nagłówki
+  origin: ['http://149.156.194.192:8802', 'http://localhost:8802', 'http://localhost:56322'], 
+  credentials: true,                
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], 
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'], 
 }));
 const PORT = process.env.PORT || 8801;
 

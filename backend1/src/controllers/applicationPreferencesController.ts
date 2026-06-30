@@ -19,7 +19,6 @@ export const savePreferences = async (req: AuthenticatedRequest, res: Response):
       return;
     }
 
-    // Walidacja reguły: MAKSYMALNIE 3 PLACÓWKI
     if (institutions.length > 3) {
       res.status(400).json({ 
         message: 'Błąd walidacji: Możesz wybrać maksymalnie 3 placówki preferowane!' 
@@ -32,22 +31,20 @@ export const savePreferences = async (req: AuthenticatedRequest, res: Response):
       return;
     }
 
-    // Walidacja: czy priorytety się nie dublują
     const orders = institutions.map(inst => inst.order);
     const hasDuplicates = new Set(orders).size !== orders.length;
     if (hasDuplicates) {
       res.status(400).json({ message: 'Każda placówka musi mieć unikalny priorytet (1, 2 lub 3)!' });
       return;
     }
-    //dodaje Wioletka
+  
     await connection.beginTransaction();
     
-    // 1. Czyszczenie starych preferencji dla tego wniosku
+
     await db.query('DELETE FROM application_institutions WHERE id_application = ?', [id_application]);
 
-    // 2. Zapisywanie nowych preferencji
  for (const inst of institutions) {
-      // Obliczamy punkty specyficzne dla tego przedszkola/żłobka
+
       const pointsForThisInst = await calculatePointsForInstitution(
         connection, 
         id_application,

@@ -3,7 +3,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../config/db';
 
-// 1. REJESTRACJA
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, firstName, lastName } = req.body;
@@ -13,7 +12,6 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Szukamy użytkownika po mailu
     const [existingUsers]: any = await db.query('SELECT * FROM user WHERE email = ?', [email]);
     if (existingUsers.length > 0) {
       res.status(400).json({ message: 'Użytkownik o tym adresie e-mail już istnieje!' });
@@ -66,7 +64,7 @@ export const registerHeadmaster = async (req: Request, res: Response): Promise<v
   }
 };
 
-// 2. LOGOWANIE
+
 export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -116,7 +114,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
 
 export const getMe = async (req: any, res: Response): Promise<void> => {
   try {
-    const userId = req.user.id; // ID wyciągnięte z middleware authenticateToken
+    const userId = req.user.id; 
 
     const [users]: any = await db.query(
       'SELECT id_user, email, name, surname, role FROM user WHERE id_user = ?', 

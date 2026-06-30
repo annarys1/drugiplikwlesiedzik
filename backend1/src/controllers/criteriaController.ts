@@ -2,11 +2,9 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import db from '../config/db';
 
-// 1. POBIERANIE kryteriów dla placówki dyrektora
 export const getHeadmasterCriteria = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const userId = req.user?.id;
   try {
-    // Pobieramy kryteria, które są przypisane do placówki, której właścicielem jest ten dyrektor
     const [criteria]: any = await db.query(
       `SELECT c.* FROM criteria c
        JOIN institution i ON c.id_institution = i.id_institution
@@ -19,13 +17,11 @@ export const getHeadmasterCriteria = async (req: AuthenticatedRequest, res: Resp
   }
 };
 
-// 2. DODAWANIE kryteriów przez dyrektora
 export const addCriterionByHeadmaster = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { name, points, is_variable, id_institution } = req.body;
   const userId = req.user?.id;
 
   try {
-    // Sprawdzenie, czy dyrektor zarządza tą placówką
     const [rows]: any = await db.query(
       'SELECT id_institution FROM institution WHERE id_institution = ? AND id_headmaster = ?',
       [id_institution, userId]

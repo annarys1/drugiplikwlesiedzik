@@ -6,7 +6,6 @@ export const calculatePointsForInstitution = async (
   id_institution: number
 ): Promise<number> => {
   
-  // Pobieramy zaznaczone kryteria i ich wartości z dedykowanej tabeli application_criteria
   const [criteria]: any = await connection.query(
     `SELECT c.id_criterion, c.criterion_point, c.is_variable, ac.declared_value
      FROM application_criteria ac
@@ -19,7 +18,7 @@ export const calculatePointsForInstitution = async (
 
   for (const criterion of criteria) {
     if (criterion.is_variable === 1) {
-      // Mnożnik godzin pobierany bezpośrednio z pola w bazie
+
       totalPoints += (criterion.criterion_point * (criterion.declared_value || 0));
     } else {
       totalPoints += criterion.criterion_point;

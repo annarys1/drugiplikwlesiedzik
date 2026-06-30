@@ -9,12 +9,11 @@ import { saveDraft, getDraft, submitApplication } from '../controllers/applicati
 import { savePreferences } from '../controllers/applicationPreferencesController';
 import { uploadDocument } from '../controllers/documentController'; 
 import { createApplication, updateApplicationStatus, getDirectorApplications, getParentApplications } from '../controllers/applicationController';
-// ... reszta kodu ...
-// KONFIGURACJA MULTERA (DLA PLIKÓW)
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Pliki będą lądować w folderze 
+    cb(null, 'uploads/'); 
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}_${file.originalname}`); 
@@ -26,7 +25,6 @@ const upload = multer({ storage: storage });
 const router = Router();
 
 
-// TRASY DLA RODZICA (Wymagają tylko zalogowania)
 
 
 // 1. Automatyczne obliczanie punktów i składanie wniosku

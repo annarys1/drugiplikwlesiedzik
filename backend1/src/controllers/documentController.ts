@@ -17,7 +17,6 @@ export const uploadDocument = async (req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    // Zapisujemy ścieżkę do pliku w bazie danych
     await db.query(
       'INSERT INTO application_documents (id_application, id_criterion, file_path) VALUES (?, ?, ?)',
       [id_application, id_criterion, file.path]

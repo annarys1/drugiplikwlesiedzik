@@ -6,7 +6,6 @@ import crypto from 'crypto';
 const PESEL_SALT = process.env.PESEL_SALT || 'domyslna-bardzo-tajna-sol';
 
 const hashPesel = (pesel: string): string => {
-  // Dodajemy sól do peselu przed haszowaniem
   return crypto.createHash('sha256').update(pesel + PESEL_SALT).digest('hex');
 };
 
@@ -35,8 +34,6 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
       return;
     }
 
-
-    // DODALAM
     if (!/^\d{11}$/.test(pesel)) {
     res.status(400).json({ message: 'PESEL musi mieć 11 cyfr!' });
     return;
@@ -63,7 +60,7 @@ export const addChild = async (req: AuthenticatedRequest, res: Response): Promis
     res.status(400).json({ message: 'Nieprawidłowa data urodzenia!' });
     return;
     }
-    //dodałam ja
+
     const [existingChildren]: any = await db.query(
       'SELECT id_children FROM children WHERE pesel = ?',
       [peselHash]

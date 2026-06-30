@@ -9,7 +9,6 @@ const router = Router();
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 
-// Endpoint do pobrania danych o zalogowanym użytkowniku (używany w profilu)
 router.get('/me', authenticateToken as any, getMe);
 
 // Administracja

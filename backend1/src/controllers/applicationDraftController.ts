@@ -14,20 +14,20 @@ export const saveDraft = async (req: AuthenticatedRequest, res: Response): Promi
       return;
     }
 
-    // sprawdź czy istnieje draft
+
     const [existing]: any = await db.query(
       'SELECT * FROM application WHERE id_parent = ? AND status = ?',
       [parentId, 'draft']
     );
 
     if (existing.length > 0) {
-      // update draftu
+
       await db.query(
         'UPDATE application SET id_children=?, id_institution=?, step=?, data=? WHERE id_parent=? AND status=?',
         [id_children, id_institution, step, JSON.stringify(data), parentId, 'draft']
       );
     } else {
-      // create draft
+
       await db.query(
         'INSERT INTO application (id_parent, id_children, id_institution, status, step, data) VALUES (?, ?, ?, ?, ?, ?)',
         [parentId, id_children, id_institution, 'draft', step, JSON.stringify(data)]

@@ -15,7 +15,6 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
 
     await connection.beginTransaction();
 
-    // 1. Sprawdzenie duplikatu
     const [existing]: any = await connection.query(
         "SELECT id_application FROM application WHERE id_children = ? AND status != 'rejected'",
         [id_children]
@@ -26,7 +25,6 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
         return;
     }
 
-    // 2. Wstawienie wniosku ogólnego
     const [result]: any = await connection.query(
       'INSERT INTO application (id_parent, id_children, id_institution, status) VALUES (?, ?, NULL, ?)',
       [parentId, id_children, 'submitted']
@@ -34,7 +32,6 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
 
     const applicationId = result.insertId;
 
-    // 3. Zapisanie wybranych placówek (preferencji)
     if (selectedInstitutions && selectedInstitutions.length > 0) {
       const instValues = selectedInstitutions.map((id_inst: number, index: number) => [
         applicationId, 
@@ -48,7 +45,6 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
       );
     }
 
-    // 4. Powiązanie wybranych kryteriów wraz z zadeklarowaną wartością
     if (selectedCriteria && selectedCriteria.length > 0) {
       const values = selectedCriteria.map((c: any) => [applicationId, c.id_criterion, c.declared_value || 0]);
       await connection.query(
@@ -113,7 +109,6 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
       return;
     }
 
-    // WERYFIKACJA: Czy dyrektor zarządza chociaż jedną z placówek, które ten rodzic wybrał w preferencjach?
     const [rows]: any = await db.query(
       `SELECT ai.id_application 
        FROM application_institutions ai
@@ -141,7 +136,7 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
 
 export const getParentApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const parentId = req.user?.id; // Pobieramy ID zalogowanego rodzica
+    const parentId = req.user?.id; 
 
     if (!parentId) {
       res.status(401).json({ message: 'Brak autoryzacji' });

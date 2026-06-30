@@ -31,7 +31,6 @@ export const addInstitution = async (req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    // Tutaj możesz przypisać id_headmaster jako null, skoro placówka jest tworzona przez admina
     await db.query(
       'INSERT INTO institution (name, city, max_capacity, id_headmaster) VALUES (?, ?, ?, ?)',
       [name, city, max_capacity, null] 
