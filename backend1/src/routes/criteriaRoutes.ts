@@ -3,10 +3,14 @@ import {
   getHeadmasterCriteria,
   addCriterionByHeadmaster
 } from '../controllers/criteriaController';
+import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { upload } from '../middleware/uploadMiddleware';
 
 const router = Router();
+
+// Ścieżka publiczna (brak autoryzacji)
+router.get('/public/criteria', getAllCriteriaPublic);
 
 router.get('/my-criteria', authenticateToken, getHeadmasterCriteria);
 
@@ -23,10 +27,3 @@ router.post('/upload-doc', authenticateToken, upload.single('document'), (req, r
 });
 
 export default router;
-import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
-
-// Ścieżka publiczna (brak authMiddleware)
-router.get('/public/criteria', getAllCriteriaPublic);
-
-// Ścieżka zabezpieczona (z authMiddleware)
-router.get('/headmaster/criteria', authMiddleware, getHeadmasterCriteria);

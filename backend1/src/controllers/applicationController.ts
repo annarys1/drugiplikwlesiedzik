@@ -74,28 +74,71 @@ export const getDirectorApplications = async (req: AuthenticatedRequest, res: Re
       return;
     }
 
+    // Wnioski do placówki/placówek prowadzonych przez tego dyrektora,
+    // wraz z priorytetem (preference_order) i punktami dla TEJ konkretnej placówki.
     const [rows]: any = await db.query(
-    `SELECT
-      a.id_application,
-      c.name AS first_name,
-      c.surname AS last_name,
-      a.status,
-      -- Tutaj wyciągamy punkty przypisane do każdej placówki
-      GROUP_CONCAT(
-        CONCAT(ai.preference_order, ': ', i.name, ' (', ai.calculated_points, ' pkt)') 
-        ORDER BY ai.preference_order ASC SEPARATOR ', '
-      ) AS chosen_institutions
-    FROM application a
-    JOIN children c ON a.id_children = c.id_children
-    LEFT JOIN application_institutions ai ON a.id_application = ai.id_application
-    LEFT JOIN institution i ON ai.id_institution = i.id_institution
-    WHERE a.id_parent = ? AND a.status != 'draft'
-    GROUP BY a.id_application
-    ORDER BY a.id_application DESC`,
-    [parentId]
-  );
+      `SELECT
+        a.id_application,
+        a.status,
+        a.created_at,
+        c.id_children,
+        c.name AS child_name,
+        c.surname AS child_surname,
+        c.pesel AS child_pesel,
+        c.date_birth AS child_birth_date,
+        c.domicile AS child_address,
+        u.name AS parent_name,
+        u.surname AS parent_surname,
+        u.email AS parent_email,
+        ai.preference_order,
+        ai.calculated_points,
+        i.id_institution,
+        i.name AS institution_name
+      FROM application_institutions ai
+      JOIN institution i ON ai.id_institution = i.id_institution
+      JOIN application a ON ai.id_application = a.id_application
+      JOIN children c ON a.id_children = c.id_children
+      JOIN user u ON a.id_parent = u.id_user
+      WHERE i.id_headmaster = ?
+        AND a.status != 'draft'
+      ORDER BY ai.preference_order ASC, a.id_application DESC`,
+      [directorId]
+    );
 
-  res.status(200).json(rows);
+    if (rows.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    // Dociągamy załączniki dla wszystkich znalezionych wniosków (osobne zapytanie,
+    // żeby uniknąć powielania wierszy przez GROUP_CONCAT).
+    const applicationIds = [...new Set(rows.map((r: any) => r.id_application))];
+
+    const [docs]: any = await db.query(
+      `SELECT id_document, id_application, id_criterion, file_path, created_at
+       FROM application_documents
+       WHERE id_application IN (?)`,
+      [applicationIds]
+    );
+
+    const docsByApplication: Record<number, any[]> = {};
+    for (const doc of docs) {
+      if (!docsByApplication[doc.id_application]) {
+        docsByApplication[doc.id_application] = [];
+      }
+      docsByApplication[doc.id_application].push(doc);
+    }
+
+    const result = rows.map((r: any) => ({
+      ...r,
+      attachments: docsByApplication[r.id_application] || [],
+    }));
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Błąd pobierania wniosków dyrektora:', error.message);
+    res.status(500).json({ message: 'Błąd serwera podczas pobierania wniosków.' });
+  }
 };
 
 export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
