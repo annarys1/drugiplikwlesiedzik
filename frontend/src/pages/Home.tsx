@@ -13,19 +13,77 @@ export default function Home() {
           </h1>
 
           <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-            Centralna rekrutacja do przedszkoli i żłobków gminnych.
+            Centralna rekrutacja do przedszkoli gminnych.
+          </p>
+          <p className="text-xl text-gray-700 max-w-3xl mx-auto">
             Wybierz placówki, złóż wniosek i śledź jego status online.
           </p>
 
-          <Link
-            to="/placowki"
-            className="inline-block mt-8 bg-pink-700 text-white px-8 py-3 rounded-xl hover:bg-pink-800"
-          >
-            Zobacz dostępne placówki
-          </Link>
+          
 
         </div>
       </section>
+
+      <section className="py-16 px-6 bg-gray-50">
+  <div className="max-w-6xl mx-auto">
+
+    <h2 className="text-3xl font-bold text-center mb-10">
+      Dostępne placówki
+    </h2>
+
+    <div className="grid md:grid-cols-3 gap-6">
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <h3 className="font-bold text-xl mb-2">
+          Przedszkole nr 1
+        </h3>
+
+        <p className="text-gray-600">
+          Kraków
+        </p>
+
+        <p className="mt-2">
+          Maks. miejsc: <b>50</b>
+        </p>
+
+      </div>
+
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <h3 className="font-bold text-xl mb-2">
+          Przedszkole Samorządowe w Biskupicach
+        </h3>
+
+        <p className="text-gray-600">
+          Biskupice
+        </p>
+
+        <p className="mt-2">
+          Maks. miejsc: <b>20</b>
+        </p>
+
+      </div>
+
+
+      <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <h3 className="font-bold text-xl mb-2">
+          Przedszkole Samorządowe w Trąbkach
+        </h3>
+
+        <p className="text-gray-600">
+          Trąbki
+        </p>
+
+        <p className="mt-2">
+          Maks. miejsc: <b>70</b>
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+</section>
 
 
       {/* Aktualna rekrutacja */}
@@ -47,7 +105,7 @@ export default function Home() {
 
             <p className="mt-2">
               Termin składania wniosków:
-              <b> 1 marca - 31 marca 2027</b>
+              <b> 1 czerwca - 7 lipca 2026</b>
             </p>
 
           </div>
@@ -107,7 +165,7 @@ export default function Home() {
             Najważniejsze informacje
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
 
             <div className="border rounded-xl p-6">
               <h3 className="font-bold text-xl">
@@ -124,19 +182,19 @@ export default function Home() {
                 Wymagane dokumenty
               </h3>
               <p>
-                Dowiedz się, jakie dokumenty należy dołączyć.
+                                  
+                📄 Wniosek rekrutacyjny
               </p>
-            </div>
-
-
-            <div className="border rounded-xl p-6">
-              <h3 className="font-bold text-xl">
-                Harmonogram
-              </h3>
               <p>
-                Zobacz terminy kolejnych etapów rekrutacji.
+                              
+                Dołącz uzupełniony wniosek rekrutacyjny zawierający
+                dane dziecka oraz dane opiekuna.
+
               </p>
             </div>
+
+
+            
 
           </div>
 
