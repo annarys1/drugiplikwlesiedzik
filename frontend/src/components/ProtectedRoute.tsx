@@ -7,9 +7,9 @@ interface Props {
 }
 
 const ProtectedRoute = ({ allowedRoles, children }: Props) => {
-  const { user, isAuthenticated, isLoading } = useAuth() as any;
+  // 1. Zamiast 'isAuthenticated' używamy 'user' (tak jak mamy w AuthContext)
+  const { user, isLoading } = useAuth();
 
-  
   if (isLoading) {
     return (
       <div
@@ -33,17 +33,19 @@ const ProtectedRoute = ({ allowedRoles, children }: Props) => {
     );
   }
 
-  // 2. Jeśli ładowanie się skończyło i użytkownik NIE jest zalogowany -> do logowania
-  if (!isAuthenticated) {
+ 
+  if (!user) {
     return <Navigate to="/logowanie" replace />;
   }
 
-  // 3. Jeśli rola użytkownika nie pasuje do wymaganej
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (user.role === 'admin') return <Navigate to="/panel/gmina" replace />;
+    if (user.role === 'headmaster') return <Navigate to="/panel/placowka" replace />;
+    return <Navigate to="/panel/rodzic" replace />;
   }
 
-  // 4. Jeśli wszystko jest ok -> pokaż zawartość
+  
   return children ? <>{children}</> : <Outlet />;
 };
 

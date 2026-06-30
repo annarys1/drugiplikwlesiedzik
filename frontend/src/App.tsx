@@ -13,8 +13,10 @@ import ApplicationPage from './pages/ApplicationPage';
 import MyApplications from './pages/MyApplications';
 import Profile from './pages/Profile';
 import AddHeadmaster from './pages/AddHeadmaster';
+import ProtectedRoute from './components/ProtectedRoute'; 
 
 const router = createBrowserRouter([
+  // --- STREFA PUBLICZNA (Dostępna dla każdego) ---
   {
     path: '/',
     element: <MainLayout />,
@@ -24,20 +26,42 @@ const router = createBrowserRouter([
       { path: 'rejestracja', element: <Register /> },
     ],
   },
+  
+  // --- STREFA CHRONIONA (Tylko zalogowani) ---
   {
     path: '/panel',
     element: <DashboardLayout />,
     children: [
-      { path: 'rodzic', element: <ParentDashboard /> },
-      { path: 'rodzic/nowy-wniosek', element: <ApplicationPage /> },
-      { path: 'rodzic/moje-wnioski', element: <MyApplications /> },
-      { path: 'rodzic/profil', element: <Profile /> },
-      { path: 'placowka', element: <FacilityDashboard /> },
-      { path: 'gmina', element: <GminaDashboard /> },
-      { path: 'gmina/dodaj-dyrektora', element: <AddHeadmaster /> },
+      // --- STREFA RODZICA ---
+      { 
+        element: <ProtectedRoute allowedRoles={['parents']} />,
+        children: [
+          { path: 'rodzic', element: <ParentDashboard /> },
+          { path: 'rodzic/nowy-wniosek', element: <ApplicationPage /> },
+          { path: 'rodzic/moje-wnioski', element: <MyApplications /> },
+          { path: 'profil', element: <Profile /> },
+        ]
+      },
+
+      // --- STREFA GMINY (ADMIN) ---
+      {
+        element: <ProtectedRoute allowedRoles={['admin']} />,
+        children: [
+          { path: 'gmina', element: <GminaDashboard /> },
+          { path: 'gmina/dodaj-dyrektora', element: <AddHeadmaster /> },
+        ]
+      },
+
+      // --- STREFA DYREKTORA ---
+      {
+        element: <ProtectedRoute allowedRoles={['headmaster']} />,
+        children: [
+          { path: 'placowka', element: <FacilityDashboard /> },
+        ]
+      }
     ],
   },
-]);
+]); 
 
 export default function App() {
   return (
