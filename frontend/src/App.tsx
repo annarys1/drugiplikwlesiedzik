@@ -14,7 +14,7 @@ import MyApplications from './pages/MyApplications';
 import Profile from './pages/Profile';
 import AddHeadmaster from './pages/AddHeadmaster';
 import ProtectedRoute from './components/ProtectedRoute'; 
-
+import AddInstitution from './pages/AddInstitution';
 
 const router = createBrowserRouter([
   // --- STREFA PUBLICZNA (Dostępna dla każdego) ---
@@ -50,6 +50,7 @@ const router = createBrowserRouter([
         children: [
           { path: 'gmina', element: <GminaDashboard /> },
           { path: 'gmina/dodaj-dyrektora', element: <AddHeadmaster /> },
+          { path: 'gmina/dodaj-placowke', element: <AddInstitution /> },
         ]
       },
 
