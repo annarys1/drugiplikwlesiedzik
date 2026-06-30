@@ -7,10 +7,10 @@ export default function GminaDashboard() {
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Panel Gminy</h1>
 
-      {/* Siatka na kafelki (będzie się ładnie układać na telefonach i komputerach) */}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         
-        {/* Kafelek: Dodaj dyrektora */}
+        
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4">
           <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

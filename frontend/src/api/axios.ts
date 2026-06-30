@@ -11,7 +11,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Tutaj używamy dokładnie tej samej nazwy, co w Twoim AuthContext!
     const token = localStorage.getItem('token'); 
     
     if (token && config.headers) {

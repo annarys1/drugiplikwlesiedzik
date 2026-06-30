@@ -9,7 +9,7 @@ interface Props {
 const ProtectedRoute = ({ allowedRoles, children }: Props) => {
   const { user, isAuthenticated, isLoading } = useAuth() as any;
 
-  // 1. Dopóki aplikacja sprawdza localStorage, pokazujemy ekran ładowania
+  
   if (isLoading) {
     return (
       <div
