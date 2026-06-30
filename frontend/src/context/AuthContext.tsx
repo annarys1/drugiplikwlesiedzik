@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
+import api from '../api/axios';
 
 // 1. Definiujemy, jak wygląda użytkownik
 interface User {
@@ -32,30 +33,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: any) => {
     try {
-      const response = await fetch('http://localhost:8801/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
+      const response = await api.post('/auth/login', credentials);
+      const data = response.data;
 
-      const data = await response.json();
+      // Zapisujemy token ORAZ dane użytkownika w przeglądarce
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-      if (response.ok) {
-        // Zapisujemy token ORAZ dane użytkownika w przeglądarce
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Aktualizujemy stan aplikacji
-        setToken(data.token);
-        setUser(data.user);
-        
-        // Zwracamy rolę do Login.tsx, żeby wiedział, gdzie przekierować!
-        return { success: true, role: data.user.role };
-      }
-      
-      return { success: false, message: data.message || 'Błąd logowania' };
-    } catch (err) {
-      return { success: false, message: 'Błąd połączenia z serwerem' };
+      // Aktualizujemy stan aplikacji
+      setToken(data.token);
+      setUser(data.user);
+
+      // Zwracamy rolę do Login.tsx, żeby wiedział, gdzie przekierować!
+      return { success: true, role: data.user.role };
+    } catch (err: any) {
+      const message = err?.response?.data?.message || 'Błąd połączenia z serwerem';
+      return { success: false, message };
     }
   };
 

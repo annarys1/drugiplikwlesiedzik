@@ -1,6 +1,7 @@
 import { useState, useId } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 
 
@@ -53,32 +54,22 @@ export default function Register() {
     setIsSubmitting(true);
     try {
       
-      const res = await fetch('http://localhost:8801/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          password: form.password,
-          role: 'parents', // Wymuszenie roli rodzica
-        }),
+      await api.post('/auth/register', {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+        role: 'parents', // Wymuszenie roli rodzica
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data?.message ?? 'Rejestracja nie powiodła się. Spróbuj ponownie.');
-        return;
-      }
-
-      const success = await login({ email: form.email, password: form.password });
-      if (success) {
+      const loginResult = await login({ email: form.email, password: form.password });
+      if (loginResult.success) {
         navigate('/panel/rodzic');
       } else {
         navigate('/logowanie');
       }
-    } catch {
-      setError('Błąd połączenia z serwerem. Spróbuj za chwilę.');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Rejestracja nie powiodła się. Spróbuj ponownie.');
     } finally {
       setIsSubmitting(false);
     }
