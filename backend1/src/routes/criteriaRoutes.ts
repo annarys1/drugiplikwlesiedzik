@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import {
   getHeadmasterCriteria,
-  addCriterionByHeadmaster
+  addCriterionByHeadmaster,
+  getCriteriaForInstitutions
 } from '../controllers/criteriaController';
 import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
 import { authenticateToken } from '../middleware/authMiddleware';
@@ -25,5 +26,6 @@ router.post('/upload-doc', authenticateToken, upload.single('document'), (req, r
     fileName: req.file.filename
   });
 });
+router.get('/list', getCriteriaForInstitutions);
 
 export default router;

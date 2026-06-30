@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import db from '../config/db';
 
@@ -14,6 +14,28 @@ export const getHeadmasterCriteria = async (req: AuthenticatedRequest, res: Resp
     res.status(200).json(criteria);
   } catch (error: any) {
     res.status(500).json({ message: 'Błąd pobierania kryteriów.' });
+  }
+};
+export const getCriteriaForInstitutions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { ids } = req.query;
+    
+    if (!ids) {
+      res.status(400).json({ message: 'Brak parametrów placówek.' });
+      return;
+    }
+
+    const institutionIds = (ids as string).split(',').map(Number);
+
+    const [criteria]: any = await db.query(
+      'SELECT * FROM criteria WHERE id_institution IS NULL OR id_institution IN (?)',
+      [institutionIds]
+    );
+
+    res.status(200).json(criteria);
+  } catch (error: any) {
+    console.error('Błąd pobierania kryteriów:', error.message);
+    res.status(500).json({ message: 'Błąd serwera podczas pobierania kryteriów.' });
   }
 };
 

@@ -9,7 +9,7 @@ import { saveDraft, getDraft, submitApplication } from '../controllers/applicati
 import { savePreferences } from '../controllers/applicationPreferencesController';
 import { uploadDocument } from '../controllers/documentController'; 
 import { createApplication, updateApplicationStatus, getDirectorApplications, getParentApplications } from '../controllers/applicationController';
-
+import { addCriteriaToApplication } from '../controllers/applicationCriteriaController';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -41,7 +41,7 @@ router.post('/submit/:id', authenticateToken as any, submitApplication);
 
 // 5. Zapis preferencji wyboru placówek - MAX 3
 router.post('/preferences', authenticateToken as any, savePreferences);
-
+router.post('/criteria', authenticateToken as any, addCriteriaToApplication);
 // 6. UPLOAD DOKUMENTU I POWIĄZANIE Z KRYTERIUM 
 router.post('/upload', authenticateToken as any, upload.single('document'), uploadDocument);
 
