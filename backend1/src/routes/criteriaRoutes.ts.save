@@ -1,18 +1,15 @@
 import { Router } from 'express';
 import {
   getHeadmasterCriteria,
-  addCriterionByHeadmaster,
-  getCriteriaForInstitutions
+  addCriterionByHeadmaster
 } from '../controllers/criteriaController';
 import { authenticateToken } from '../middleware/authMiddleware';
-import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
 import { upload } from '../middleware/uploadMiddleware';
-import { addCriteriaToApplication } from '../controllers/applicationCriteriaController';
+import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
+
+
 const router = Router();
 
-router.get('/test', (req, res) => {
-  res.json({ ok: true });
-});
 router.get('/my-criteria', authenticateToken, getHeadmasterCriteria);
 
 router.post('/add', authenticateToken, addCriterionByHeadmaster);
@@ -26,7 +23,11 @@ router.post('/upload-doc', authenticateToken, upload.single('document'), (req, r
     fileName: req.file.filename
   });
 });
-router.post('/criteria', authenticateToken as any, addCriteriaToApplication);
-router.get('/public/criteria', getAllCriteriaPublic);
-router.get('/list', getCriteriaForInstitutions);
+
 export default router;
+import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
+
+// Ścieżka publiczna (brak authMiddleware)
+router.get('/public/criteria', getAllCriteriaPublic
+// Ścieżka zabezpieczona (z authMiddleware)
+router.get('/headmaster/criteria', authMiddleware, getHeadmasterCriteria);

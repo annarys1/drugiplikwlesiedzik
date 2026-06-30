@@ -1,15 +1,31 @@
 import { useState, useEffect } from "react";
 import api from '../api/axios';
 
+interface Institution {
+  id_institution: number;
+  name: string;
+  city: string;
+  max_capacity: number;
+}
+
+interface Criterion {
+  id_criterion: number;
+  name: string;
+  criterion_point: number;
+  id_institution: number | null;
+  type: string;
+  is_variable: number;
+}
+
 export default function Home() {
-  const [institutions, setInstitutions] = useState([]);
-  const [criteria, setCriteria] = useState([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [loading, setLoading] = useState(true);
 useEffect(() => {
   const fetchData = async () => {
 
     try {
-      const instRes = await api.get('/institution/list');
+      const instRes = await api.get('/institution');
       setInstitutions(instRes.data);
 
     } catch (error) {
@@ -18,7 +34,7 @@ useEffect(() => {
 
 
     try {
-      const critRes = await api.get('/public/criteria');
+      const critRes = await api.get('/criteria/public/criteria');
       setCriteria(critRes.data);
 
     } catch (error) {
@@ -71,22 +87,28 @@ useEffect(() => {
                     Maks. miejsc: <b>{inst.max_capacity}</b>
                   </p>
 
-                  {/* Dynamiczne kryteria: globalne + lokalne dla placówki */}
-                  <div className="mt-4 pt-4 border-t">
-                    <h4 className="font-bold text-sm text-pink-700 uppercase mb-2">Kryteria rekrutacji:</h4>
-                    <ul className="space-y-1">
-                      {criteria
-                        .filter((c) => c.id_institution === inst.id_institution || c.type === 'global')
-                        .map((c) => (
-                          <li key={c.id_criterion} className="flex justify-between text-sm bg-gray-50 p-1 px-2 rounded">
-                            <span>
-                              {c.name}
-                              {c.is_variable === 1 && <span className="ml-1 text-[10px] text-gray-400">(zmienne)</span>}
-                            </span>
-                            <span className="font-bold text-pink-600">{c.criterion_point} pkt</span>
-                          </li>
-                        ))}
-                    </ul>
+                  {/* Dynamiczne kryteria: globalne */}
+		  <div className="mt-4 pt-4 border-t relative group">
+                    <h4 className="font-bold text-sm text-pink-700 uppercase cursor-pointer hover:text-pink-900 transition underline decoration-dotted">
+                      Kryteria rekrutacji (najedź)
+                    </h4>
+                    
+                    {/* Lista pojawiająca się po najechaniu */}
+                    <div className="absolute left-0 top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-xl p-4 hidden group-hover:block z-10">
+                      <ul className="space-y-1">
+                        {criteria
+                          .filter((c) => c.id_institution === inst.id_institution || c.type === 'global')
+                          .map((c) => (
+                            <li key={c.id_criterion} className="flex justify-between text-sm bg-gray-50 p-1 px-2 rounded">
+                              <span>
+                                {c.name}
+                                {c.is_variable === 1 && <span className="ml-1 text-[10px] text-gray-400">(zmienne)</span>}
+                              </span>
+                              <span className="font-bold text-pink-600">{c.criterion_point} pkt</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               ))}

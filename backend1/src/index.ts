@@ -39,6 +39,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/headmaster', headmasterRoutes);
 
 app.use('/api', healthRoutes);
+console.log("ŁADUJĘ CRITERIA ROUTES");
 app.use('/api/criteria', criteriaRoutes);
 
 app.get('/', (req, res) => {

@@ -65,7 +65,9 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
 };
 
 
-export const getDirectorApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+
+
+  export const getDirectorApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const directorId = req.user?.id;
 
@@ -80,7 +82,6 @@ export const getDirectorApplications = async (req: AuthenticatedRequest, res: Re
       c.name AS first_name,
       c.surname AS last_name,
       a.status,
-      -- Tutaj wyciągamy punkty przypisane do każdej placówki
       GROUP_CONCAT(
         CONCAT(ai.preference_order, ': ', i.name, ' (', ai.calculated_points, ' pkt)') 
         ORDER BY ai.preference_order ASC SEPARATOR ', '
@@ -89,13 +90,18 @@ export const getDirectorApplications = async (req: AuthenticatedRequest, res: Re
     JOIN children c ON a.id_children = c.id_children
     LEFT JOIN application_institutions ai ON a.id_application = ai.id_application
     LEFT JOIN institution i ON ai.id_institution = i.id_institution
-    WHERE a.id_parent = ? AND a.status != 'draft'
+    -- Zmieniono poniżej z parentId na directorId
+    WHERE i.id_headmaster = ? AND a.status != 'draft' 
     GROUP BY a.id_application
     ORDER BY a.id_application DESC`,
-    [parentId]
+    [directorId] // Tutaj również przekazujemy directorId
   );
 
   res.status(200).json(rows);
+  } catch (error: any) {
+    console.error('Błąd pobierania wniosków dyrektora:', error.message);
+    res.status(500).json({ message: 'Błąd serwera' });
+  }
 };
 
 export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -135,6 +141,35 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
     res.status(500).json({ message: 'Błąd serwera' });
   }
 };
+export const addCriteriaToApplication = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id_application, criteria } = req.body;
+
+    if (!id_application || !Array.isArray(criteria)) {
+      res.status(400).json({ message: 'Niepoprawne dane żądania!' });
+      return;
+    }
+
+    await db.query('DELETE FROM application_criteria WHERE id_application = ?', [id_application]);
+
+    if (criteria.length > 0) {
+      const values = criteria.map((c: any) => [
+        id_application,
+        c.id_criterion,
+        c.value || c.declared_value || 0
+      ]);
+      await db.query(
+        'INSERT INTO application_criteria (id_application, id_criterion, declared_value) VALUES ?',
+        [values]
+      );
+    }
+
+    res.status(200).json({ message: 'Kryteria zapisane.' });
+  } catch (error: any) {
+    console.error('Błąd zapisu kryteriów:', error.message);
+    res.status(500).json({ message: 'Błąd serwera podczas zapisu kryteriów.' });
+  }
+};
 
 export const getParentApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -151,7 +186,10 @@ export const getParentApplications = async (req: AuthenticatedRequest, res: Resp
     c.name AS first_name, 
     c.surname AS last_name, 
     a.status,
-    GROUP_CONCAT(CONCAT(ai.preference_order, ': ', i.name) ORDER BY ai.preference_order ASC SEPARATOR ', ') AS chosen_institutions
+    GROUP_CONCAT(
+  CONCAT(ai.preference_order, ': ', i.name, ' (', ai.calculated_points, ' pkt)') 
+  ORDER BY ai.preference_order ASC SEPARATOR ', '
+) AS chosen_institutions
    FROM application a
    JOIN children c ON a.id_children = c.id_children
    LEFT JOIN application_institutions ai ON a.id_application = ai.id_application
