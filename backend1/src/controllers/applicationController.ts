@@ -75,25 +75,27 @@ export const getDirectorApplications = async (req: AuthenticatedRequest, res: Re
     }
 
     const [rows]: any = await db.query(
-      `SELECT 
-    a.id_application, 
-    c.name AS first_name, 
-    c.surname AS last_name, 
-    a.status AS application_status,
-    ai.preference_order
-   FROM application a
-   JOIN children c ON a.id_children = c.id_children
-   JOIN application_institutions ai ON a.id_application = ai.id_application
-   JOIN institution i ON ai.id_institution = i.id_institution
-   WHERE i.id_headmaster = ? AND a.status != 'draft'
-   ORDER BY a.id_application DESC`,
-      [directorId]
-    );
-    res.status(200).json(rows);
-  } catch (error: any) {
-    console.error('Błąd pobierania wniosków dla dyrektora:', error.message);
-    res.status(500).json({ message: 'Błąd serwera podczas pobierania wniosków.' });
-  }
+    `SELECT
+      a.id_application,
+      c.name AS first_name,
+      c.surname AS last_name,
+      a.status,
+      -- Tutaj wyciągamy punkty przypisane do każdej placówki
+      GROUP_CONCAT(
+        CONCAT(ai.preference_order, ': ', i.name, ' (', ai.calculated_points, ' pkt)') 
+        ORDER BY ai.preference_order ASC SEPARATOR ', '
+      ) AS chosen_institutions
+    FROM application a
+    JOIN children c ON a.id_children = c.id_children
+    LEFT JOIN application_institutions ai ON a.id_application = ai.id_application
+    LEFT JOIN institution i ON ai.id_institution = i.id_institution
+    WHERE a.id_parent = ? AND a.status != 'draft'
+    GROUP BY a.id_application
+    ORDER BY a.id_application DESC`,
+    [parentId]
+  );
+
+  res.status(200).json(rows);
 };
 
 export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
