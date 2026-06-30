@@ -7,7 +7,7 @@ import childrenRoutes from './routes/childrenRoutes';
 import institutionRoutes from './routes/institutionRoutes';
 import applicationRoutes from './routes/applicationRoutes';
 import healthRoutes from './routes/healthRoutes';
-
+import headmasterRoutes from './routes/headmasterRoutes';
 
 dotenv.config();
 
@@ -34,7 +34,7 @@ app.use('/api/children', childrenRoutes);
 app.use('/api/institution', institutionRoutes);
 
 app.use('/api/applications', applicationRoutes);
-
+app.use('/api/headmaster', headmasterRoutes);
 
 app.use('/api', healthRoutes);
 

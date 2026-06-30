@@ -44,7 +44,7 @@ export default function Login() {
         if (result.role === 'parents') navigate('/panel/rodzic');
         else if (result.role === 'headmaster') navigate('/panel/placowka');
         else if (result.role === 'admin') navigate('/panel/gmina');
-        else navigate('/'); // Ścieżka awaryjna, jakby rola była inna
+        else navigate('/'); 
       } else {
         setError(result.message || 'Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.');
       }
