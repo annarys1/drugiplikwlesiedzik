@@ -88,17 +88,16 @@ export const updateCriterionByHeadmaster = async (
   try {
 
     const [rows]: any = await db.query(
-      `
-      SELECT c.id_criterion
-      FROM criteria c
-      JOIN institution i 
-      ON c.id_institution = i.id_institution
-      WHERE c.id_criterion = ?
-      AND i.id_headmaster = ?
-      AND c.is_variable = 1
-      `,
-      [id, userId]
-    );
+    `
+    SELECT c.id_criterion
+    FROM criteria c
+    JOIN institution i 
+    ON c.id_institution = i.id_institution
+    WHERE c.id_criterion = ?
+    AND i.id_headmaster = ?
+    `,
+    [id, userId]
+  );
 
 
     if(rows.length === 0){
@@ -276,7 +275,7 @@ export const createHeadmasterCriterion = async (
       (
         name,
         criterion_point,
-        is_variable,
+        0,
         id_institution
       )
       VALUES (?, ?, ?, ?)

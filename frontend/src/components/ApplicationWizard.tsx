@@ -475,39 +475,32 @@ useEffect(() => {
   return (
     <label key={c.id_criterion} className="flex items-center p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition">
       <input
-        type="checkbox"
-        className="w-5 h-5 text-pink-600 rounded"
-        checked={isChecked}
-        onChange={(e) => {
-          const updated = e.target.checked
-            ? [...form.selectedCriteria, { id_criterion: c.id_criterion, value: c.is_variable ? '' : undefined }]
-            : form.selectedCriteria.filter(s => s.id_criterion !== c.id_criterion);
-          onChange(updated);
-        }}
-      />
-      <span className="ml-3 text-sm font-medium text-gray-700">{c.name}</span>
-
-      {/* Pole na wartość zmienną, np. liczba godzin */}
-      {c.is_variable === 1 && isChecked && (
-        <input
-          type="number"
-          min="1"
-          placeholder="np. liczba godzin"
-          className="ml-3 w-24 border rounded px-2 py-1 text-sm"
-          value={selectedEntry?.value ?? ''}
-          onClick={(e) => e.preventDefault()} // żeby klik na input nie odznaczał checkboxa (bo input jest w <label>)
-          onChange={(e) => {
-            const updated = form.selectedCriteria.map(s =>
-              s.id_criterion === c.id_criterion ? { ...s, value: e.target.value } : s
+      type="checkbox"
+      className="w-5 h-5 text-pink-600 rounded"
+      checked={isChecked}
+      onChange={(e) => {
+        const updated = e.target.checked
+          ? [
+              ...form.selectedCriteria,
+              {
+                id_criterion: c.id_criterion
+              }
+            ]
+          : form.selectedCriteria.filter(
+              s => s.id_criterion !== c.id_criterion
             );
-            onChange(updated);
-          }}
-        />
-      )}
 
-      <span className="ml-auto text-xs font-bold text-pink-600 bg-pink-50 px-2 py-1 rounded">
-        {c.criterion_point} pkt
-      </span>
+        onChange(updated);
+      }}
+    />
+
+    <span className="ml-3 text-sm font-medium text-gray-700">
+      {c.name}
+    </span>
+
+    <span className="ml-auto text-xs font-bold text-pink-600 bg-pink-50 px-2 py-1 rounded">
+      {c.criterion_point} pkt
+    </span>
     </label>
  );
 })}
