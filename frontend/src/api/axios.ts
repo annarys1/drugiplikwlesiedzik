@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  //baseURL: 'http://eduenroll-backend:8801',
-  baseURL: '/api',
+  baseURL: 'http://localhost:8801',
+  //baseURL: '/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -24,3 +24,5 @@ api.interceptors.request.use(
 );
 
 export default api;
+
+

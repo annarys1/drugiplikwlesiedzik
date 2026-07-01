@@ -448,7 +448,7 @@ useEffect(() => {
     try {
       // Dzięki baseURL: '/api', tutaj piszesz tylko '/criteria/list'
       // axios automatycznie dopisze przedrostek /api/
-      const res = await api.get('/criteria/list', { 
+      const res = await api.get('/api/criteria/list', { 
         params: { ids: facilityIds.join(',') } 
       });
       setCriteria(res.data);

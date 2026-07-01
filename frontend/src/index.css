@@ -13,11 +13,7 @@ body {
   outline-offset: 2px;
 }
 
-/* ============================================
-   WYSOKI KONTRAST (WCAG 2.1) — tryb włączany przełącznikiem
-   ============================================ */
 
-/* Cały kolorowy tekst -> czarny, niezależnie od odcienia */
 html.high-contrast [class*="text-pink-"],
 html.high-contrast [class*="text-gray-"],
 html.high-contrast [class*="text-blue-"],
