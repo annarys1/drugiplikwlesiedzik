@@ -448,7 +448,7 @@ useEffect(() => {
     try {
       // Dzięki baseURL: '/api', tutaj piszesz tylko '/criteria/list'
       // axios automatycznie dopisze przedrostek /api/
-      const res = await api.get('/api/criteria/list', { 
+      const res = await api.get('/criteria/list', { 
         params: { ids: facilityIds.join(',') } 
       });
       setCriteria(res.data);
@@ -580,22 +580,21 @@ export default function ApplicationWizard() {
   const [facilitiesError, setFacilitiesError] = useState<string | null>(null);
 
   useEffect(() => {
-    // GET /api/institution — publiczny endpoint (bez tokenu)
-    fetch('/api/institution')
-      .then(res => {
-        if (!res.ok) throw new Error(`Serwer zwrócił ${res.status}`);
-        return res.json();
-      })
-      .then((data: Facility[]) => {
-        setFacilities(data);
-        setFacilitiesLoading(false);
-      })
-      .catch((err: Error) => {
-        console.error('❌ Błąd pobierania placówek:', err.message);
-        setFacilitiesError(err.message ?? 'Nieznany błąd');
-        setFacilitiesLoading(false);
-      });  
-  }, []);
+  const fetchFacilities = async () => {
+    try {
+      const res = await api.get('/institution');
+
+      setFacilities(res.data);
+    } catch (err: any) {
+      console.error('❌ Błąd pobierania placówek:', err);
+      setFacilitiesError(err.message ?? 'Nieznany błąd');
+    } finally {
+      setFacilitiesLoading(false);
+    }
+  };
+
+  fetchFacilities();
+}, []);
 
   const updateForm = (field: StringFields, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));

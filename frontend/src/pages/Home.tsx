@@ -25,7 +25,7 @@ useEffect(() => {
   const fetchData = async () => {
 
     try {
-      const instRes = await api.get('/api/institution');
+      const instRes = await api.get('/institution');
       console.log("DANE Z API:", instRes.data);
       setInstitutions(instRes.data);
 
@@ -35,7 +35,7 @@ useEffect(() => {
 
 
     try {
-      const critRes = await api.get('/api/criteria/public/criteria');
+      const critRes = await api.get('/criteria/public/criteria');
       setCriteria(critRes.data);
 
     } catch (error) {
