@@ -25,7 +25,7 @@ export default function AddHeadmaster() {
   useEffect(() => {
     const fetchInstitutions = async () => {
       try {
-        const response = await api.get('/institution/list');
+        const response = await api.get('/institution');
         setInstitutions(response.data);
       } catch (error) {
         console.error('Błąd pobierania placówek:', error);
