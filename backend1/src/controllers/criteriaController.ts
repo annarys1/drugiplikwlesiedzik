@@ -39,45 +39,22 @@ export const getCriteriaForInstitutions = async (req: Request, res: Response): P
   }
 };
 
-export const addCriterionByHeadmaster = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { name, points, is_variable, id_institution } = req.body;
-  const userId = req.user?.id;
 
-  try {
-    const [rows]: any = await db.query(
-      'SELECT id_institution FROM institution WHERE id_institution = ? AND id_headmaster = ?',
-      [id_institution, userId]
-    );
-
-    if (rows.length === 0) {
-      res.status(403).json({ message: 'Brak uprawnień do tej placówki!' });
-      return;
-    }
-
-    await db.query(
-      'INSERT INTO criteria (name, criterion_point, is_variable, id_institution, type) VALUES (?, ?, ?, ?, ?)',
-      [name, points, is_variable, id_institution, 'local']
-    );
-
-    res.status(201).json({ message: 'Kryterium placówki dodane!' });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Błąd serwera.' });
-  }
-};
 
 export const updateCriterionByHeadmaster = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
 
-  const { id } = req.params;
-  const { name, points, is_variable } = req.body;
+  
+
+  const id = Number(req.params.id);
+  const { criterion_point } = req.body;
 
   const userId = req.user?.id;
 
-  try {
 
-    // sprawdzamy czy kryterium należy do jego placówki
+  try {
 
     const [rows]: any = await db.query(
       `
@@ -87,6 +64,7 @@ export const updateCriterionByHeadmaster = async (
       ON c.id_institution = i.id_institution
       WHERE c.id_criterion = ?
       AND i.id_headmaster = ?
+      AND c.is_variable = 1
       `,
       [id, userId]
     );
@@ -103,13 +81,11 @@ export const updateCriterionByHeadmaster = async (
     await db.query(
       `
       UPDATE criteria
-      SET name=?, criterion_point=?, is_variable=?
+      SET criterion_point=?
       WHERE id_criterion=?
       `,
       [
-        name,
-        points,
-        is_variable,
+        criterion_point,
         id
       ]
     );
@@ -120,13 +96,17 @@ export const updateCriterionByHeadmaster = async (
     });
 
 
-  } catch(error){
+  } catch(error:any){
 
-    res.status(500).json({
-      message:"Błąd serwera"
-    });
+  console.error("UPDATE ERROR:", error.message);
+  console.error(error);
 
-  }
+  res.status(500).json({
+    message:"Błąd serwera",
+    error: error.message
+  });
+
+}
 
 };
 
@@ -185,3 +165,121 @@ export const deleteCriterionByHeadmaster = async(
  }
 
 }
+
+
+export const createHeadmasterCriterion = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+
+
+  console.log("USER:", req.user);
+  console.log("BODY:", req.body);
+
+
+  try {
+
+
+    const userId = req.user?.id;
+
+
+    const {
+      name,
+      criterion_point
+    } = req.body;
+
+
+
+    if(!name || criterion_point === undefined){
+
+      res.status(400).json({
+        message:"Brak danych"
+      });
+
+      return;
+
+    }
+
+
+
+    // pobranie placówki dyrektora
+
+    const [institution]: any = await db.query(
+      `
+      SELECT id_institution
+      FROM institution
+      WHERE id_headmaster = ?
+      `,
+      [userId]
+    );
+
+
+
+    console.log(
+      "INSTITUTION:",
+      institution
+    );
+
+
+
+    if(institution.length === 0){
+
+      res.status(403).json({
+        message:"Dyrektor nie ma przypisanej placówki"
+      });
+
+      return;
+
+    }
+
+
+
+    const institutionId =
+      institution[0].id_institution;
+
+
+
+    await db.query(
+      `
+      INSERT INTO criteria
+      (
+        name,
+        criterion_point,
+        is_variable,
+        id_institution
+      )
+      VALUES (?, ?, ?, ?)
+      `,
+      [
+        name,
+        criterion_point,
+        1,
+        institutionId
+      ]
+    );
+
+
+
+    res.status(201).json({
+      message:"Dodano kryterium"
+    });
+
+
+
+  } catch(error:any){
+
+
+    console.error(
+      "CREATE CRITERION ERROR:",
+      error.message
+    );
+
+
+    res.status(500).json({
+      message:"Błąd serwera"
+    });
+
+
+  }
+
+};

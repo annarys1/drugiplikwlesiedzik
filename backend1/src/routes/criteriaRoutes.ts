@@ -2,16 +2,16 @@ import { Router } from 'express';
 
 import {
   getHeadmasterCriteria,
-  addCriterionByHeadmaster,
   getCriteriaForInstitutions,
   deleteCriterionByHeadmaster,
-  updateCriterionByHeadmaster
+  updateCriterionByHeadmaster,
+  createHeadmasterCriterion
 } from '../controllers/criteriaController';
 
 import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { upload } from '../middleware/uploadMiddleware';
-
+import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -31,11 +31,7 @@ router.get(
 );
 
 
-router.post(
-  '/headmaster',
-  authenticateToken,
-  addCriterionByHeadmaster
-);
+
 
 
 router.put(
@@ -49,6 +45,25 @@ router.delete(
   '/headmaster/:id',
   authenticateToken,
   deleteCriterionByHeadmaster
+);
+
+router.post(
+  '/headmaster',
+  authenticateToken,
+  (
+  req: AuthenticatedRequest,
+  res,
+  next
+) => {
+
+    console.log("JESTEM W ROUTE POST CRITERIA");
+    
+    console.log("BODY:", req.body);
+
+    next();
+
+  },
+  createHeadmasterCriterion
 );
 
 
