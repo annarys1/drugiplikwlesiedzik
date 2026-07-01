@@ -35,35 +35,90 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
 };
 export const registerHeadmaster = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { 
+      email, 
+      password, 
+      firstName, 
+      lastName,
+      institutionId
+    } = req.body;
 
-    if (!email || !password || !firstName || !lastName) {
-      res.status(400).json({ message: 'Wszystkie pola są wymagane!' });
+
+    if (!email || !password || !firstName || !lastName || !institutionId) {
+      res.status(400).json({ 
+        message: 'Wszystkie pola są wymagane!' 
+      });
       return;
     }
 
-    const [existingUsers]: any = await db.query('SELECT * FROM user WHERE email = ?', [email]);
+
+    const [existingUsers]: any = await db.query(
+      'SELECT * FROM user WHERE email = ?',
+      [email]
+    );
+
+
     if (existingUsers.length > 0) {
-      res.status(400).json({ message: 'Użytkownik o tym adresie e-mail już istnieje!' });
+      res.status(400).json({ 
+        message: 'Użytkownik o tym adresie e-mail już istnieje!' 
+      });
       return;
     }
+
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    
-    await db.query(
-      'INSERT INTO user (email, password, name, surname, role) VALUES (?, ?, ?, ?, ?)',
-      [email, hashedPassword, firstName, lastName, 'headmaster']
+
+
+    // tworzenie konta dyrektora
+    const [result]: any = await db.query(
+      `
+      INSERT INTO user 
+      (email, password, name, surname, role)
+      VALUES (?, ?, ?, ?, ?)
+      `,
+      [
+        email,
+        hashedPassword,
+        firstName,
+        lastName,
+        'headmaster'
+      ]
     );
 
-    res.status(201).json({ message: 'Konto dyrektora zostało utworzone!' });
+
+    const headmasterId = result.insertId;
+
+
+
+    // przypisanie dyrektora do placówki
+    await db.query(
+      `
+      UPDATE institution
+      SET id_headmaster = ?
+      WHERE id_institution = ?
+      `,
+      [
+        headmasterId,
+        institutionId
+      ]
+    );
+
+
+    res.status(201).json({ 
+      message: 'Konto dyrektora zostało utworzone!' 
+    });
+
+
   } catch (error: any) {
     console.error('Błąd rejestracji dyrektora:', error.message);
-    res.status(500).json({ message: 'Błąd serwera podczas rejestracji dyrektora.' });
+
+    res.status(500).json({ 
+      message: 'Błąd serwera podczas rejestracji dyrektora.' 
+    });
   }
 };
-
 
 export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {

@@ -881,7 +881,7 @@ export default function ApplicationWizard() {
             </button>
           )}
 
-        nn  {step < 3 ? (
+          {step < 3 ? (
             <button
               onClick={handleNext}
               disabled={(step === 0 && form.facilityIds.length === 0) || loading || facilitiesLoading}
