@@ -66,7 +66,7 @@ const router = createBrowserRouter([
 
         {
           path: 'gmina/kryteria',
-          element: <CriteriaManager isAdmin={true} />
+          element: <CriteriaManager role="admin" />
         },
       ]
     },
@@ -88,7 +88,7 @@ const router = createBrowserRouter([
 
         {
           path: 'placowka/kryteria',
-          element: <CriteriaManager />
+          element: <CriteriaManager role="headmaster" />
         }
 
       ]

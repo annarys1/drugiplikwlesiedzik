@@ -3,20 +3,19 @@ import api from "../api/axios";
 
 
 interface Props {
-  isAdmin?: boolean;
+  role: "admin" | "headmaster";
 }
 
+export default function CriteriaManager({ role }: Props) {
 
-export default function CriteriaManager({ isAdmin = false }: Props) {
-
+  const isAdmin = role === "admin";
+  const canManage = role === "admin" || role === "headmaster";
 
   const [criteria, setCriteria] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editedPoints, setEditedPoints] = useState<string>("");
+  const [editedPoints, setEditedPoints] = useState("");
   const [loading, setLoading] = useState(false);
-
   const [showAdd, setShowAdd] = useState(false);
-
 
   const [newCriterion, setNewCriterion] = useState({
     name: "",
@@ -24,32 +23,26 @@ export default function CriteriaManager({ isAdmin = false }: Props) {
   });
 
 
-
   const load = async () => {
-  try {
+    try {
 
-    const endpoint = isAdmin
-      ? "/criteria/admin"
-      : "/criteria/headmaster";
+      const endpoint = isAdmin
+        ? "/criteria/admin"
+        : "/criteria/headmaster";
 
-    const res = await api.get(endpoint);
+      const res = await api.get(endpoint);
 
-    setCriteria(res.data);
+      setCriteria(res.data);
 
-  } catch (error) {
-
-    console.error("Błąd pobierania kryteriów:", error);
-
-  }
-};
-
+    } catch(error) {
+      console.error("Błąd pobierania kryteriów:", error);
+    }
+  };
 
 
   useEffect(() => {
-
     load();
-
-  }, []);
+  }, [role]);
 
 
 
@@ -136,9 +129,10 @@ export default function CriteriaManager({ isAdmin = false }: Props) {
       : "/criteria/headmaster";
 
     await api.post(endpoint, {
-      name: newCriterion.name,
-      criterion_point: Number(newCriterion.criterion_point)
-    });
+    name: newCriterion.name,
+    criterion_point: Number(newCriterion.criterion_point),
+    type: "institution"
+  });
 
     setNewCriterion({
       name: "",
@@ -158,10 +152,6 @@ export default function CriteriaManager({ isAdmin = false }: Props) {
 };
 
 
-
-
-
-
   return (
 
     <div className="p-6">
@@ -177,7 +167,7 @@ export default function CriteriaManager({ isAdmin = false }: Props) {
 
 
       {
-        isAdmin && (
+        canManage  && (
 
           <button
 
@@ -203,7 +193,7 @@ export default function CriteriaManager({ isAdmin = false }: Props) {
 
 
       {
-        showAdd && isAdmin && (
+        showAdd && canManage && (
 
           <div className="mb-5 p-4 border rounded-lg bg-gray-50">
 
@@ -438,7 +428,7 @@ export default function CriteriaManager({ isAdmin = false }: Props) {
                 ) : (
 
 
-                  isAdmin || c.is_variable ? (
+                  isAdmin || c.id_institution !== null ?(
 
                     <>
 
