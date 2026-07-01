@@ -2,7 +2,7 @@ import { useState, useEffect, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { validatePESEL, validateAge, validatePhone, validateAddress } from '../utils/validators';
-
+import api from '../api/axios';
 // --- Typy ---
 interface FormData {
   facilityIds: string[];
@@ -15,7 +15,7 @@ interface FormData {
   parentName: string;
   parentPhone: string;
   document: File | null; // zalaczniki
-  selectedCriteria: any[];  
+  selectedCriteria: any[];
 }
 
 // Typ odpowiedzi z GET /api/institution/list
@@ -41,7 +41,7 @@ const INITIAL_FORM: FormData = {
 };
 
 const MAX_FACILITIES = 3;
-const STEPS = ['Wybór placówki', 'Kryteria','Dane dziecka', 'Podsumowanie'];
+const STEPS = ['Wybór placówki','Kryteria', 'Dane dziecka', 'Podsumowanie'];
 
 // --- Pasek postępu ---
 function StepIndicator({ current }: { current: number }) {
@@ -433,35 +433,33 @@ function Step2Child({
     </div>
   );
 }
-function StepCriteria({ form, facilityIds, onChange }: {
-  form: FormData;
-  facilityIds: string[];
-  onChange: (c: any[]) => void
+function StepCriteria({ form, facilityIds, onChange }: { 
+  form: FormData; 
+  facilityIds: string[]; // Dodaj ten prop
+  onChange: (c: any[]) => void 
 }) {
   const [criteria, setCriteria] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCriteria = async () => {
-      if (facilityIds.length === 0) {
-        setCriteria([]);
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/criteria/list?ids=${facilityIds.join(',')}`);
-        const data = await res.json();
-        setCriteria(data);
-      } catch (err) {
-        console.error("Błąd kryteriów:", err);
-        setCriteria([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCriteria();
-  }, [facilityIds]);
+useEffect(() => {
+  const fetchCriteria = async () => {
+    if (facilityIds.length === 0) return;
+    
+    try {
+      // Dzięki baseURL: '/api', tutaj piszesz tylko '/criteria/list'
+      // axios automatycznie dopisze przedrostek /api/
+      const res = await api.get('/api/criteria/list', { 
+        params: { ids: facilityIds.join(',') } 
+      });
+      setCriteria(res.data);
+    } catch (err) {
+      console.error("Błąd kryteriów:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchCriteria();
+}, [facilityIds]);
 
   if (loading) return <p className="text-sm text-gray-400">Ładowanie kryteriów...</p>;
 
@@ -469,52 +467,54 @@ function StepCriteria({ form, facilityIds, onChange }: {
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-gray-800">Kryteria pierwszeństwa</h2>
       <p className="text-sm text-gray-500 mb-4">Zaznacz sytuacje, które Cię dotyczą:</p>
-
+      
       {criteria.map((c) => {
-        const isChecked = form.selectedCriteria.some(s => s.id_criterion === c.id_criterion);
-        const selectedEntry = form.selectedCriteria.find(s => s.id_criterion === c.id_criterion);
+  const isChecked = form.selectedCriteria.some(s => s.id_criterion === c.id_criterion);
+  const selectedEntry = form.selectedCriteria.find(s => s.id_criterion === c.id_criterion);
 
-        return (
-          <label key={c.id_criterion} className="flex items-center p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition">
-            <input
-              type="checkbox"
-              className="w-5 h-5 text-pink-600 rounded"
-              checked={isChecked}
-              onChange={(e) => {
-                const updated = e.target.checked
-                  ? [...form.selectedCriteria, { id_criterion: c.id_criterion, value: c.is_variable ? '' : undefined }]
-                  : form.selectedCriteria.filter(s => s.id_criterion !== c.id_criterion);
-                onChange(updated);
-              }}
-            />
-            <span className="ml-3 text-sm font-medium text-gray-700">{c.name}</span>
+  return (
+    <label key={c.id_criterion} className="flex items-center p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition">
+      <input
+        type="checkbox"
+        className="w-5 h-5 text-pink-600 rounded"
+        checked={isChecked}
+        onChange={(e) => {
+          const updated = e.target.checked
+            ? [...form.selectedCriteria, { id_criterion: c.id_criterion, value: c.is_variable ? '' : undefined }]
+            : form.selectedCriteria.filter(s => s.id_criterion !== c.id_criterion);
+          onChange(updated);
+        }}
+      />
+      <span className="ml-3 text-sm font-medium text-gray-700">{c.name}</span>
 
-            {c.is_variable === 1 && isChecked && (
-              <input
-                type="number"
-                min="1"
-                placeholder="np. liczba godzin"
-                className="ml-3 w-24 border rounded px-2 py-1 text-sm"
-                value={selectedEntry?.value ?? ''}
-                onClick={(e) => e.preventDefault()}
-                onChange={(e) => {
-                  const updated = form.selectedCriteria.map(s =>
-                    s.id_criterion === c.id_criterion ? { ...s, value: e.target.value } : s
-                  );
-                  onChange(updated);
-                }}
-              />
-            )}
+      {/* Pole na wartość zmienną, np. liczba godzin */}
+      {c.is_variable === 1 && isChecked && (
+        <input
+          type="number"
+          min="1"
+          placeholder="np. liczba godzin"
+          className="ml-3 w-24 border rounded px-2 py-1 text-sm"
+          value={selectedEntry?.value ?? ''}
+          onClick={(e) => e.preventDefault()} // żeby klik na input nie odznaczał checkboxa (bo input jest w <label>)
+          onChange={(e) => {
+            const updated = form.selectedCriteria.map(s =>
+              s.id_criterion === c.id_criterion ? { ...s, value: e.target.value } : s
+            );
+            onChange(updated);
+          }}
+        />
+      )}
 
-            <span className="ml-auto text-xs font-bold text-pink-600 bg-pink-50 px-2 py-1 rounded">
-              {c.criterion_point} pkt
-            </span>
-          </label>
-        );
-      })}
+      <span className="ml-auto text-xs font-bold text-pink-600 bg-pink-50 px-2 py-1 rounded">
+        {c.criterion_point} pkt
+      </span>
+    </label>
+ );
+})}
     </div>
   );
 }
+
 // --- Krok 3: Podsumowanie ---
 function Step3Summary({ form }: { form: FormData }) {
   return (
@@ -559,6 +559,7 @@ function Step3Summary({ form }: { form: FormData }) {
   );
 }
 
+
 // --- Główny komponent Wizard ---
 export default function ApplicationWizard() {
   const { token } = useAuth();
@@ -571,13 +572,15 @@ export default function ApplicationWizard() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
+  
+
   // --- Pobieranie placówek z API ---
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesError, setFacilitiesError] = useState<string | null>(null);
 
   useEffect(() => {
-    // GET /api/institution/list — publiczny endpoint (bez tokenu)
+    // GET /api/institution — publiczny endpoint (bez tokenu)
     fetch('/api/institution')
       .then(res => {
         if (!res.ok) throw new Error(`Serwer zwrócił ${res.status}`);
@@ -609,10 +612,9 @@ export default function ApplicationWizard() {
       setServerError('Musisz wybrać co najmniej jedno kryterium, aby kontynuować.');
       return false;
     }
-    setServerError(null);
+    setServerError(null); // Czyścimy błąd, jeśli jest OK
     return true;
   }
-
     if (step === 2) {
       const newErrors: Partial<Record<StringFields, string>> = {};
 
@@ -709,9 +711,9 @@ export default function ApplicationWizard() {
         setLoading(false);
         return;
       }
+	 const applicationId = appJson.id_application;
 
-      const applicationId = appJson.id_application;
-         // Krok 3: Zapisz wybrane kryteria — POST /api/applications/criteria
+      // Krok 3: Zapisz wybrane kryteria
       if (form.selectedCriteria.length > 0) {
         const critRes = await fetch('/api/applications/criteria', {
           method: 'POST',
@@ -719,7 +721,6 @@ export default function ApplicationWizard() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          credentials: 'include',
           body: JSON.stringify({
             id_application: applicationId,
             criteria: form.selectedCriteria,
@@ -735,6 +736,7 @@ export default function ApplicationWizard() {
           return;
         }
       }
+      
       // Krok 3: Zapisz preferencje placówek — POST /api/applications/preferences
       const institutions = form.facilityIds.map((id, idx) => ({
         id_institution: Number(id),
@@ -847,16 +849,17 @@ export default function ApplicationWizard() {
           />
         )}
         {step === 1 && (
-  <StepCriteria
-    form={form}
-    facilityIds={form.facilityIds}
-    onChange={(c) => setForm(prev => ({ ...prev, selectedCriteria: c }))}
-  />
-)}
-{step === 2 && (
-  <Step2Child form={form} onChange={updateForm} errors={errors} />
-)}
-{step === 3 && <Step3Summary form={form} />}
+          <StepCriteria 
+            form={form} 
+            facilityIds={form.facilityIds}
+            onChange={(c) => setForm(prev => ({ ...prev, selectedCriteria: c }))} 
+          />
+        )}
+        {step === 2 && (
+          <Step2Child form={form} onChange={updateForm} errors={errors} />
+        )}
+        {step === 3 && <Step3Summary form={form} />}
+
         <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100">
           {step > 0 ? (
             <button
@@ -879,7 +882,7 @@ export default function ApplicationWizard() {
             </button>
           )}
 
-          {step < 3 ? (
+        nn  {step < 3 ? (
             <button
               onClick={handleNext}
               disabled={(step === 0 && form.facilityIds.length === 0) || loading || facilitiesLoading}
