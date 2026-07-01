@@ -46,15 +46,30 @@ const router = createBrowserRouter([
         ]
       },
 
-      // --- STREFA GMINY (ADMIN) ---
       {
-        element: <ProtectedRoute allowedRoles={['admin']} />,
-        children: [
-          { path: 'gmina', element: <GminaDashboard /> },
-          { path: 'gmina/dodaj-dyrektora', element: <AddHeadmaster /> },
-          { path: 'gmina/dodaj-placowke', element: <AddInstitution /> },
-        ]
-      },
+      element: <ProtectedRoute allowedRoles={['admin']} />,
+      children: [
+        { 
+          path: 'gmina', 
+          element: <GminaDashboard /> 
+        },
+
+        { 
+          path: 'gmina/dodaj-dyrektora', 
+          element: <AddHeadmaster /> 
+        },
+
+        { 
+          path: 'gmina/dodaj-placowke', 
+          element: <AddInstitution /> 
+        },
+
+        {
+          path: 'gmina/kryteria',
+          element: <CriteriaManager isAdmin={true} />
+        },
+      ]
+    },
 
       // --- STREFA DYREKTORA ---
       {

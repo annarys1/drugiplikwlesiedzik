@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 
-export default function CriteriaManager() {
+
+interface Props {
+  isAdmin?: boolean;
+}
+
+
+export default function CriteriaManager({ isAdmin = false }: Props) {
+
 
   const [criteria, setCriteria] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedPoints, setEditedPoints] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-
   const [showAdd, setShowAdd] = useState(false);
+
 
   const [newCriterion, setNewCriterion] = useState({
     name: "",
@@ -19,23 +26,22 @@ export default function CriteriaManager() {
 
 
   const load = async () => {
+  try {
 
-    try {
+    const endpoint = isAdmin
+      ? "/criteria/admin"
+      : "/criteria/headmaster";
 
-      const res = await api.get("/criteria/headmaster");
+    const res = await api.get(endpoint);
 
-      setCriteria(res.data);
+    setCriteria(res.data);
 
-    } catch(error) {
+  } catch (error) {
 
-      console.error(
-        "Błąd pobierania kryteriów:",
-        error
-      );
+    console.error("Błąd pobierania kryteriów:", error);
 
-    }
-
-  };
+  }
+};
 
 
 
@@ -49,85 +55,67 @@ export default function CriteriaManager() {
 
 
 
-  const savePoints = async (id:number) => {
+  const savePoints = async (id: number) => {
 
-    try {
+  try {
 
-      setLoading(true);
+    setLoading(true);
 
+    const endpoint = isAdmin
+      ? `/criteria/admin/${id}`
+      : `/criteria/headmaster/${id}`;
 
-      await api.put(
-        `/criteria/headmaster/${id}`,
-        {
-          criterion_point:Number(editedPoints)
-        }
-      );
+    await api.put(endpoint, {
+      criterion_point: Number(editedPoints)
+    });
 
+    setEditingId(null);
+    setEditedPoints("");
 
-      setEditingId(null);
-      setEditedPoints("");
+    await load();
 
-      await load();
+  } catch (error) {
 
+    console.error("Błąd zapisu kryterium:", error);
 
-    } catch(error) {
+  } finally {
 
+    setLoading(false);
 
-      console.error(
-        "Błąd zapisu kryterium:",
-        error
-      );
+  }
 
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
+};
 
 
 
 
 
-  const deleteCriterion = async (id:number) => {
 
+  const deleteCriterion = async (id: number) => {
 
-    const confirmDelete = window.confirm(
-      "Czy na pewno chcesz usunąć to kryterium?"
-    );
+  const confirmDelete = window.confirm(
+    "Czy na pewno chcesz usunąć to kryterium?"
+  );
 
+  if (!confirmDelete) return;
 
-    if(!confirmDelete){
-      return;
-    }
+  try {
 
+    const endpoint = isAdmin
+      ? `/criteria/admin/${id}`
+      : `/criteria/headmaster/${id}`;
 
+    await api.delete(endpoint);
 
-    try {
+    await load();
 
+  } catch (error) {
 
-      await api.delete(
-        `/criteria/headmaster/${id}`
-      );
+    console.error("Błąd usuwania kryterium:", error);
 
+  }
 
-      await load();
-
-
-    } catch(error) {
-
-
-      console.error(
-        "Błąd usuwania kryterium:",
-        error
-      );
-
-
-    }
-
-  };
+};
 
 
 
@@ -136,60 +124,39 @@ export default function CriteriaManager() {
 
   const addCriterion = async () => {
 
+  if (!newCriterion.name || !newCriterion.criterion_point) {
+    alert("Uzupełnij wszystkie pola");
+    return;
+  }
 
-    if(
-      !newCriterion.name ||
-      !newCriterion.criterion_point
-    ){
+  try {
 
-      alert("Uzupełnij wszystkie pola");
+    const endpoint = isAdmin
+      ? "/criteria/admin"
+      : "/criteria/headmaster";
 
-      return;
+    await api.post(endpoint, {
+      name: newCriterion.name,
+      criterion_point: Number(newCriterion.criterion_point)
+    });
 
-    }
+    setNewCriterion({
+      name: "",
+      criterion_point: ""
+    });
 
+    setShowAdd(false);
 
+    await load();
 
-    try {
+  } catch (error) {
 
+    console.error("Błąd dodawania kryterium:", error);
 
-      await api.post(
-        "/criteria/headmaster",
-        {
-          name:newCriterion.name,
-          criterion_point:Number(
-            newCriterion.criterion_point
-          )
-        }
-      );
+  }
 
+};
 
-
-      setNewCriterion({
-        name:"",
-        criterion_point:""
-      });
-
-
-      setShowAdd(false);
-
-
-      await load();
-
-
-
-    } catch(error) {
-
-
-      console.error(
-        "Błąd dodawania kryterium:",
-        error
-      );
-
-
-    }
-
-  };
 
 
 
@@ -201,37 +168,50 @@ export default function CriteriaManager() {
 
 
       <h1 className="text-2xl font-bold mb-5 text-gray-800">
-        Kryteria placówki
+
+        Kryteria rekrutacji
+
       </h1>
 
 
 
-      <button
 
-        onClick={() =>
-          setShowAdd(!showAdd)
-        }
+      {
+        isAdmin && (
 
-        className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg mb-5"
+          <button
 
-      >
+            onClick={() =>
+              setShowAdd(!showAdd)
+            }
 
-        + Dodaj kryterium
+            className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg mb-5"
 
-      </button>
+          >
+
+            + Dodaj kryterium
+
+          </button>
+
+        )
+      }
+
+
 
 
 
 
 
       {
-        showAdd && (
+        showAdd && isAdmin && (
 
           <div className="mb-5 p-4 border rounded-lg bg-gray-50">
 
 
             <h2 className="font-semibold mb-3">
+
               Nowe kryterium
+
             </h2>
 
 
@@ -294,7 +274,9 @@ export default function CriteriaManager() {
           </div>
 
         )
+
       }
+
 
 
 
@@ -330,9 +312,11 @@ export default function CriteriaManager() {
                 Akcje
               </th>
 
+
             </tr>
 
           </thead>
+
 
 
 
@@ -402,11 +386,13 @@ export default function CriteriaManager() {
 
                 <td className="p-3 border-b">
 
+
                   {
                     c.is_variable
                     ? "Zmienny"
                     : "Stały"
                   }
+
 
                 </td>
 
@@ -418,8 +404,12 @@ export default function CriteriaManager() {
                 <td className="p-3 border-b">
 
 
+
                 {
-                  editingId === c.id_criterion ? (
+
+
+                editingId === c.id_criterion ? (
+
 
                     <button
 
@@ -441,16 +431,16 @@ export default function CriteriaManager() {
                         : "Zapisz"
                       }
 
+
                     </button>
 
 
+                ) : (
 
-                  ) : (
 
+                  isAdmin || c.is_variable ? (
 
-                    c.is_variable ? (
-
-                      <>
+                    <>
 
 
                       <button
@@ -499,24 +489,25 @@ export default function CriteriaManager() {
                       </button>
 
 
-                      </>
+                    </>
 
 
-                    ) : (
+                  ) : (
 
+                    <span className="text-gray-400">
 
-                      <span className="text-gray-400">
+                      Tylko administrator
 
-                        Tylko administrator
-
-                      </span>
-
-
-                    )
-
+                    </span>
 
                   )
+
+
+                )
+
+
                 }
+
 
 
                 </td>

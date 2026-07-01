@@ -283,3 +283,124 @@ export const createHeadmasterCriterion = async (
   }
 
 };
+
+export const getAdminCriteria = async (
+  req: Request,
+  res: Response
+) => {
+
+  try {
+
+    const [rows] = await db.query(
+      `
+      SELECT *
+      FROM criteria
+      WHERE is_variable = false
+      `
+    );
+
+
+    res.json(rows);
+
+
+  } catch(error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message:"Błąd pobierania kryteriów"
+    });
+
+  }
+
+};
+
+export const createAdminCriterion = async (req: Request, res: Response) => {
+    const { name, criterion_point } = req.body;
+
+    await db.query(
+        `
+        INSERT INTO criteria
+        (
+            name,
+            criterion_point,
+            is_variable,
+            id_institution
+        )
+        VALUES (?, ?, 0, NULL)
+        `,
+        [name, criterion_point]
+    );
+
+    res.status(201).json({
+        message: "Dodano"
+    });
+};
+
+export const updateAdminCriterion = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+
+  
+
+  const id = Number(req.params.id);
+  const { criterion_point } = req.body;
+
+  const userId = req.user?.id;
+
+
+  try {
+
+    const [rows]: any = await db.query(
+      `
+      SELECT c.id_criterion
+      FROM criteria c
+      JOIN institution i 
+      ON c.id_institution = i.id_institution
+      WHERE c.id_criterion = ?
+      AND i.id_headmaster = ?
+      `,
+      [id, userId]
+    );
+
+
+    if(rows.length === 0){
+      res.status(403).json({
+        message:"Brak uprawnień"
+      });
+      return;
+    }
+
+
+    await db.query(
+      `
+      UPDATE criteria
+      SET criterion_point=?
+      WHERE id_criterion=?
+      `,
+      [
+        criterion_point,
+        id
+      ]
+    );
+
+
+    res.json({
+      message:"Zaktualizowano kryterium"
+    });
+
+
+  } catch(error:any){
+
+  console.error("UPDATE ERROR:", error.message);
+  console.error(error);
+
+  res.status(500).json({
+    message:"Błąd serwera",
+    error: error.message
+  });
+
+}
+
+};

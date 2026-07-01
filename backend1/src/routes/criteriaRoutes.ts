@@ -5,7 +5,8 @@ import {
   getCriteriaForInstitutions,
   deleteCriterionByHeadmaster,
   updateCriterionByHeadmaster,
-  createHeadmasterCriterion
+  createHeadmasterCriterion,
+  getAdminCriteria
 } from '../controllers/criteriaController';
 
 import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
@@ -30,7 +31,10 @@ router.get(
   getHeadmasterCriteria
 );
 
-
+router.get(
+  "/admin",
+  getAdminCriteria
+);
 
 
 

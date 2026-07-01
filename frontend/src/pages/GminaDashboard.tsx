@@ -76,6 +76,34 @@ export default function GminaDashboard() {
 
         </div>
 
+        {/* Kryteria */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4">
+
+          <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+            ⚙️
+          </div>
+
+
+          <div>
+            <h2 className="font-semibold text-gray-800">
+              Kryteria rekrutacji
+            </h2>
+
+            <p className="text-sm text-gray-500 mt-1">
+              Zarządzaj kryteriami obowiązującymi w gminie.
+            </p>
+          </div>
+
+
+          <button
+            onClick={() => navigate('/panel/gmina/kryteria')}
+            className="mt-auto px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-400"
+          >
+            Zarządzaj →
+          </button>
+
+        </div>
+
 
 
       </div>
