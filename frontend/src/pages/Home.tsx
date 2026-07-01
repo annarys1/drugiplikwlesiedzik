@@ -160,10 +160,10 @@ useEffect(() => {
           <div className="grid md:grid-cols-4 gap-6">
 
             {[
-              "Dodaj dane dziecka",
-              "Wybierz maksymalnie 3 placówki",
-              "Dodaj wymagane dokumenty",
-              "Odbierz wynik rekrutacji"
+              "Uzupełnij dane dziecka i opiekuna",
+              "Wybierz preferowane placówki",
+              "Zaznacz kryteria rekrutacyjne i dołącz dokumenty",
+              "Sprawdź wynik rekrutacji"
             ].map((item, index) => (
 
               <div
