@@ -39,9 +39,8 @@ export const savePreferences = async (req: AuthenticatedRequest, res: Response):
     }
   
     await connection.beginTransaction();
-    
 
-    await db.query('DELETE FROM application_institutions WHERE id_application = ?', [id_application]);
+    await connection.query('DELETE FROM application_institutions WHERE id_application = ?', [id_application]);
 
  for (const inst of institutions) {
 
@@ -63,6 +62,7 @@ export const savePreferences = async (req: AuthenticatedRequest, res: Response):
     await connection.commit();
     res.status(200).json({ message: 'Preferencje oraz punkty zostały pomyślnie zapisane!' });
   } catch (error: any) {
+    await connection.rollback();
     console.error('Błąd podczas zapisu preferencji:', error.message);
     res.status(500).json({ message: 'Błąd serwera podczas zapisu preferencji.' });
   }
