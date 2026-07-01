@@ -470,7 +470,6 @@ useEffect(() => {
       
       {criteria.map((c) => {
   const isChecked = form.selectedCriteria.some(s => s.id_criterion === c.id_criterion);
-  const selectedEntry = form.selectedCriteria.find(s => s.id_criterion === c.id_criterion);
 
   return (
     <label key={c.id_criterion} className="flex items-center p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition">
@@ -692,8 +691,13 @@ export default function ApplicationWizard() {
           'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
-        body: JSON.stringify({ id_children: childId }),
-      });
+        body: JSON.stringify({
+    id_children: childId,
+    selectedInstitutions: form.facilityIds.map(Number),
+    selectedCriteria: form.selectedCriteria
+  }),
+});
+      
 
       const appJson = await appRes.json();
       console.log('📥 Odpowiedź /applications/apply:', appJson);
