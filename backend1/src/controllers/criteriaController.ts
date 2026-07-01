@@ -315,92 +315,150 @@ export const getAdminCriteria = async (
 
 };
 
-export const createAdminCriterion = async (req: Request, res: Response) => {
-    const { name, criterion_point } = req.body;
-
-    await db.query(
-        `
-        INSERT INTO criteria
-        (
-            name,
-            criterion_point,
-            is_variable,
-            id_institution
-        )
-        VALUES (?, ?, 0, NULL)
-        `,
-        [name, criterion_point]
-    );
-
-    res.status(201).json({
-        message: "Dodano"
-    });
-};
-
-export const updateAdminCriterion = async (
-  req: AuthenticatedRequest,
+export const createAdminCriterion = async (
+  req: Request,
   res: Response
 ): Promise<void> => {
 
-  
+  try {
+
+    const { name, criterion_point } = req.body;
+
+    if (!name || criterion_point === undefined) {
+      res.status(400).json({
+        message: "Brak danych"
+      });
+      return;
+    }
+
+    await db.query(
+      `
+      INSERT INTO criteria
+      (
+        name,
+        criterion_point,
+        is_variable,
+        id_institution
+      )
+      VALUES (?, ?, 0, NULL)
+      `,
+      [name, criterion_point]
+    );
+
+    res.status(201).json({
+      message: "Dodano kryterium"
+    });
+
+  } catch (error: any) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message: "Błąd serwera"
+    });
+
+  }
+
+};
+
+export const updateAdminCriterion = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
 
   const id = Number(req.params.id);
   const { criterion_point } = req.body;
-
-  const userId = req.user?.id;
-
 
   try {
 
     const [rows]: any = await db.query(
       `
-      SELECT c.id_criterion
-      FROM criteria c
-      JOIN institution i 
-      ON c.id_institution = i.id_institution
-      WHERE c.id_criterion = ?
-      AND i.id_headmaster = ?
+      SELECT id_criterion
+      FROM criteria
+      WHERE id_criterion = ?
+      AND is_variable = 0
       `,
-      [id, userId]
+      [id]
     );
 
-
-    if(rows.length === 0){
-      res.status(403).json({
-        message:"Brak uprawnień"
+    if (rows.length === 0) {
+      res.status(404).json({
+        message: "Nie znaleziono kryterium"
       });
       return;
     }
 
-
     await db.query(
       `
       UPDATE criteria
-      SET criterion_point=?
-      WHERE id_criterion=?
+      SET criterion_point = ?
+      WHERE id_criterion = ?
       `,
-      [
-        criterion_point,
-        id
-      ]
+      [criterion_point, id]
     );
 
-
     res.json({
-      message:"Zaktualizowano kryterium"
+      message: "Zaktualizowano kryterium"
     });
 
+  } catch (error: any) {
 
-  } catch(error:any){
+    console.error(error);
 
-  console.error("UPDATE ERROR:", error.message);
-  console.error(error);
+    res.status(500).json({
+      message: "Błąd serwera"
+    });
 
-  res.status(500).json({
-    message:"Błąd serwera",
-    error: error.message
-  });
+  }
 
-}
+};
+
+export const deleteAdminCriterion = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+
+  const id = Number(req.params.id);
+
+  try {
+
+    const [rows]: any = await db.query(
+      `
+      SELECT id_criterion
+      FROM criteria
+      WHERE id_criterion = ?
+      AND is_variable = 0
+      `,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      res.status(404).json({
+        message: "Nie znaleziono kryterium"
+      });
+      return;
+    }
+
+    await db.query(
+      `
+      DELETE FROM criteria
+      WHERE id_criterion = ?
+      `,
+      [id]
+    );
+
+    res.json({
+      message: "Usunięto kryterium"
+    });
+
+  } catch (error: any) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message: "Błąd serwera"
+    });
+
+  }
 
 };

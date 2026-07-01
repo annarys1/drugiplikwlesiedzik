@@ -6,7 +6,10 @@ import {
   deleteCriterionByHeadmaster,
   updateCriterionByHeadmaster,
   createHeadmasterCriterion,
-  getAdminCriteria
+  getAdminCriteria,
+  createAdminCriterion,
+  updateAdminCriterion,
+  deleteAdminCriterion
 } from '../controllers/criteriaController';
 
 import { getAllCriteriaPublic } from '../controllers/publicCriteriaController';
@@ -97,6 +100,24 @@ router.post(
     });
 
   }
+);
+
+router.post(
+  "/admin",
+  authenticateToken,
+  createAdminCriterion
+);
+
+router.put(
+  "/admin/:id",
+  authenticateToken,
+  updateAdminCriterion
+);
+
+router.delete(
+  "/admin/:id",
+  authenticateToken,
+  deleteAdminCriterion
 );
 
 
