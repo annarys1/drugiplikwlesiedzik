@@ -9,7 +9,6 @@ export default function CriteriaManager() {
   const [loading, setLoading] = useState(false);
 
 
-  // dodawanie kryterium
   const [showAdd, setShowAdd] = useState(false);
 
   const [newCriterion, setNewCriterion] = useState({
@@ -26,7 +25,6 @@ export default function CriteriaManager() {
       const res = await api.get("/criteria/headmaster");
 
       setCriteria(res.data);
-
 
     } catch(error) {
 
@@ -52,7 +50,6 @@ export default function CriteriaManager() {
 
 
   const savePoints = async (id:number) => {
-
 
     try {
 
@@ -94,8 +91,63 @@ export default function CriteriaManager() {
 
 
 
+  const deleteCriterion = async (id:number) => {
+
+
+    const confirmDelete = window.confirm(
+      "Czy na pewno chcesz usunąć to kryterium?"
+    );
+
+
+    if(!confirmDelete){
+      return;
+    }
+
+
+
+    try {
+
+
+      await api.delete(
+        `/criteria/headmaster/${id}`
+      );
+
+
+      await load();
+
+
+    } catch(error) {
+
+
+      console.error(
+        "Błąd usuwania kryterium:",
+        error
+      );
+
+
+    }
+
+  };
+
+
+
+
+
 
   const addCriterion = async () => {
+
+
+    if(
+      !newCriterion.name ||
+      !newCriterion.criterion_point
+    ){
+
+      alert("Uzupełnij wszystkie pola");
+
+      return;
+
+    }
+
 
 
     try {
@@ -119,7 +171,6 @@ export default function CriteriaManager() {
       });
 
 
-
       setShowAdd(false);
 
 
@@ -137,7 +188,6 @@ export default function CriteriaManager() {
 
 
     }
-
 
   };
 
@@ -251,7 +301,6 @@ export default function CriteriaManager() {
 
 
 
-
       <div className="overflow-x-auto">
 
 
@@ -312,12 +361,12 @@ export default function CriteriaManager() {
 
 
 
+
                 <td className="p-3 border-b">
 
 
                 {
                   editingId === c.id_criterion ? (
-
 
                     <input
 
@@ -350,6 +399,7 @@ export default function CriteriaManager() {
 
 
 
+
                 <td className="p-3 border-b">
 
                   {
@@ -364,12 +414,12 @@ export default function CriteriaManager() {
 
 
 
+
                 <td className="p-3 border-b">
 
 
                 {
                   editingId === c.id_criterion ? (
-
 
                     <button
 
@@ -400,6 +450,8 @@ export default function CriteriaManager() {
 
                     c.is_variable ? (
 
+                      <>
+
 
                       <button
 
@@ -418,7 +470,7 @@ export default function CriteriaManager() {
 
                         }}
 
-                        className="text-blue-600 hover:underline"
+                        className="text-blue-600 hover:underline mr-3"
 
                       >
 
@@ -426,6 +478,28 @@ export default function CriteriaManager() {
 
                       </button>
 
+
+
+
+
+                      <button
+
+                        onClick={() =>
+                          deleteCriterion(
+                            c.id_criterion
+                          )
+                        }
+
+                        className="text-red-600 hover:underline"
+
+                      >
+
+                        Usuń
+
+                      </button>
+
+
+                      </>
 
 
                     ) : (
