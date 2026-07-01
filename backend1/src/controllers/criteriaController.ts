@@ -2,19 +2,41 @@ import { Response, Request } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import db from '../config/db';
 
-export const getHeadmasterCriteria = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const getHeadmasterCriteria = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+
   const userId = req.user?.id;
+
   try {
+
     const [criteria]: any = await db.query(
-      `SELECT c.* FROM criteria c
-       JOIN institution i ON c.id_institution = i.id_institution
-       WHERE i.id_headmaster = ?`,
+      `
+      SELECT c.*
+      FROM criteria c
+      LEFT JOIN institution i
+      ON c.id_institution = i.id_institution
+      WHERE c.id_institution IS NULL
+      OR i.id_headmaster = ?
+      `,
       [userId]
     );
+
+
     res.status(200).json(criteria);
+
+
   } catch (error: any) {
-    res.status(500).json({ message: 'Błąd pobierania kryteriów.' });
+
+    console.error(error);
+
+    res.status(500).json({
+      message: "Błąd pobierania kryteriów."
+    });
+
   }
+
 };
 export const getCriteriaForInstitutions = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -28,7 +50,16 @@ export const getCriteriaForInstitutions = async (req: Request, res: Response): P
     const institutionIds = (ids as string).split(',').map(Number);
 
     const [criteria]: any = await db.query(
-      'SELECT * FROM criteria WHERE id_institution IS NULL OR id_institution IN (?)',
+      `
+      SELECT 
+        c.*,
+        i.name AS institution_name
+      FROM criteria c
+      LEFT JOIN institution i
+        ON c.id_institution = i.id_institution
+      WHERE c.id_institution IS NULL 
+        OR c.id_institution IN (?)
+      `,
       [institutionIds]
     );
 
