@@ -270,24 +270,25 @@ export const createHeadmasterCriterion = async (
 
 
     await db.query(
-      `
-      INSERT INTO criteria
-      (
-        name,
-        criterion_point,
-        0,
-        id_institution
-      )
-      VALUES (?, ?, ?, ?)
-      `,
-      [
-        name,
-        criterion_point,
-        1,
-        institutionId
-      ]
+    `
+    INSERT INTO criteria
+    (
+      name,
+      criterion_point,
+      id_institution,
+      is_variable,
+      type
+    )
+    VALUES (?, ?, ?, ?, ?)
+    `,
+    [
+      name,
+      criterion_point,
+      institutionId,
+      1,
+      "local"
+    ]
     );
-
 
 
     res.status(201).json({
