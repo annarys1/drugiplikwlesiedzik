@@ -109,6 +109,7 @@ Po pomyślnym uruchomieniu środowiska, usługi będą dostępne pod następują
 System domyślnie posiada zainicjalizowane konta testowe, aby można było przetestować przetestować widoki dla każdej z dostępnych ról.
 | Rola w systemie | Adres e-mail | Hasło 
 |---|---|---|---|
-| **Gmina / Admin** | admin@mail.com | 123456788 |
-| **Dyrektor** | dyrektor123@mail.com | 12345677|
-| **Rodzic** | rodzic@mail.com | 123456789 |
+| **Gmina / Admin** | admin@eduenroll.pl | TwojeSuperHaslo123 |
+| **Dyrektor** | katarzynab.goczalbodura@gmail.com | Dyrektor123!|
+| **Dyrektor** | alicjapas@poczta.pl | alicjapas|
+| **Rodzic** | alicjapa@poczta.pl | alicjapa |
