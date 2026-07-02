@@ -108,7 +108,7 @@ Po pomyślnym uruchomieniu środowiska, usługi będą dostępne pod następują
 ### Dane do logowania dla testów środowiskowych:
 System domyślnie posiada zainicjalizowane konta testowe, aby można było przetestować przetestować widoki dla każdej z dostępnych ról.
 | Rola w systemie | Adres e-mail | Hasło 
-|---|---|---|---|
+|---|---|---|
 | **Gmina / Admin** | admin@eduenroll.pl | TwojeSuperHaslo123 |
 | **Dyrektor** | katarzynab.goczalbodura@gmail.com | Dyrektor123!|
 | **Dyrektor** | alicjapas@poczta.pl | alicjapas|
