@@ -120,7 +120,7 @@ sudo docker compose down
 Po pomyślnym uruchomieniu środowiska, usługi będą dostępne pod następującymi lokalnymi adresami:
  * 🌐 **Frontend (Aplikacja dla użytkownika):** http://localhost:8802
  * ⚙️ **Backend API:** http://localhost:8801/api
- * 🗄️ **Baza danych (przeglądarka):** *[Port skonfigurowany w docker-compose, domyślnie pod 8080 lub bezpośrednio z MySQL na porcie 3306]*
+ * 🗄️ **Baza danych (przeglądarka):** http://localhost:8803/index.php?route=/database/structure&db=eduenroll
 ### Dane do logowania dla testów środowiskowych:
 System domyślnie posiada zainicjalizowane konta testowe, aby można było przetestować przetestować widoki dla każdej z dostępnych ról.
 | Rola w systemie | Adres e-mail | Hasło 
