@@ -93,7 +93,7 @@ sudo docker compose up -d
 ```
 ### Krok 3: Inicjalizacja bazy danych (Konta testowe)
 Po pierwszym uruchomieniu wolumeny bazy danych zostaną stworzone automatycznie.
-```
+
 ### Krok 4: Zamykanie i restartowanie systemu
 Aby zatrzymać działanie aplikacji, wyłączyć serwery i usunąć tymczasowe kontenery, użyj komendy:
 ```bash
