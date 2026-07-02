@@ -67,10 +67,17 @@ Do poprawnego uruchomienia projektu w środowisku deweloperskim potrzebujesz zai
  * **Docker** oraz **Docker Desktop** (do konteneryzacji aplikacji i bazy danych),
  * **Node.js (v18+)** oraz npm (opcjonalnie, jeśli chcesz uruchamiać projekt poza Dockerem),
  * System kontroli wersji **Git**.
-## 7. Uruchomienie
-### Krok 1: Pobranie kodu i konfiguracja zmiennych środowiskowych (.env)
-Sklonuj repozytorium, a następnie utwórz niezbędny plik .env (zgodnie ze strukturą projektu, np. w folderze backendu). Bez tego pliku aplikacja nie połączy się z bazą danych.
-Przykładowy plik .env:
+### 7. Uruchomienie
+Przed przystąpieniem do pracy z systemem upewnij się, że masz skonfigurowane wszystkie wymagania systemowe.
+**Krok 1: Nawiązanie bezpiecznego tunelu SSH**
+Zanim uruchomisz jakąkolwiek usługę, musisz otworzyć tunel, aby Twoje lokalne środowisko mogło bezpiecznie komunikować się z serwerem. Otwórz terminal na swoim komputerze i wpisz poniższą komendę:
+```bash
+ssh -p 2209 -L 8801:127.0.0.1:8801 -L 8802:127.0.0.1:8802 -L 8803:127.0.0.1:8803 projekt@149.156.194.192
+
+```
+ * **Ważne:** To okno terminala musi pozostać otwarte przez cały czas pracy z aplikacją. Zamknięcie go przerwie połączenie z API oraz bazą danych.
+**Krok 2: Konfiguracja zmiennych środowiskowych (.env)**
+Sklonuj repozytorium, a następnie utwórz plik .env (najlepiej w głównym folderze projektu lub zgodnie ze strukturą backendu). Przykład konfiguracji:
 ```env
 PORT=8801
 DB_HOST=mysql
@@ -80,25 +87,34 @@ DB_NAME=eduenroll
 DB_PORT=3306
 JWT_SECRET=super_tajny_klucz_rekrutacji_2026
 PESEL_SALT=TwojaSuperTajnaIUnikalnaSol123!
-```
-### Krok 2: Zbudowanie obrazów i uruchomienie (Docker Compose)
-Do uruchomienia aplikacji wykorzystywany jest Docker. Będąc w głównym katalogu projektu (tam, gdzie znajduje się plik docker-compose.yml), wykonaj kolejno dwie komendy:
- 1. **Zbuduj obrazy aplikacji:**
-```bash
-sudo docker compose build
-```
- 2. **Uruchom kontenery w tle:**
-```bash
-sudo docker compose up -d
-```
-### Krok 3: Inicjalizacja bazy danych (Konta testowe)
-Po pierwszym uruchomieniu wolumeny bazy danych zostaną stworzone automatycznie.
 
-### Krok 4: Zamykanie i restartowanie systemu
-Aby zatrzymać działanie aplikacji, wyłączyć serwery i usunąć tymczasowe kontenery, użyj komendy:
+```
+**Krok 3: Zbudowanie obrazów i uruchomienie (Docker Compose)**
+Po otwarciu tunelu (Krok 1), będąc w głównym katalogu projektu, uruchom kontenery:
+ 1. Zbuduj obrazy aplikacji:
+   ```bash
+   sudo docker compose build
+   
+   ```
+ 2. Uruchom kontenery w tle:
+   ```bash
+   sudo docker compose up -d
+   
+   ```
+**Krok 4: Inicjalizacja bazy danych i loginy testowe**
+Po uruchomieniu kontenerów wolumeny zostaną zainicjowane automatycznie. Dostępne konta testowe:
+ * **Dyrektor:** dyrektor123@mail.com | hasło: 12345677
+ * **Administrator (Gmina):** admin@mail.com | hasło: 123456788
+ * **Rodzic:** rodzic@mail.com | hasło: 123456789
+**Krok 5: Wyłączanie i ponowne włączanie systemu**
+Aby bezpiecznie zatrzymać aplikację i usunąć tymczasowe kontenery, użyj komendy:
 ```bash
 sudo docker compose down
+
 ```
+* Po wykonaniu down konieczne będzie ponowne uruchomienie kontenerów przy użyciu komend z Kroku 3.*
+
+
 
 ## 8. Dostęp do aplikacji i Konta Testowe
 Po pomyślnym uruchomieniu środowiska, usługi będą dostępne pod następującymi lokalnymi adresami:
